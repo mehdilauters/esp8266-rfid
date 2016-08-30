@@ -4,7 +4,7 @@ import sys
 
 TAG_SIZE = 10
 
-class ThreadedServer(object):
+class RFIDServer(object):
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -20,7 +20,11 @@ class ThreadedServer(object):
           client, address = self.sock.accept()
           #client.settimeout(60)
           threading.Thread(target = self.listenToClient,args = (client,address)).start()
-
+          
+          
+    def on_tag_received(self, tag):
+      print "tag %s received"%tag
+    
     def listenToClient(self, client, address):
         print >>sys.stderr, 'client connected:', address
         size = 1
@@ -32,7 +36,7 @@ class ThreadedServer(object):
                     #print ("%c"%data).encode('hex')
                     tag = '%s%s'%(tag,data)
                     if len(tag) == TAG_SIZE:
-                      print "tag %s received"%tag
+                      self.on_tag_received(tag)
                       tag = ''
                 else:
                     raise error('Client disconnected')
@@ -42,4 +46,4 @@ class ThreadedServer(object):
 
 if __name__ == "__main__":
   port_num = 6677
-  ThreadedServer('0.0.0.0',port_num).listen()
+  RFIDServer('0.0.0.0',port_num).listen()
