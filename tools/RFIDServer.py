@@ -30,19 +30,16 @@ class RFIDServer(object):
         size = 1
         tag = ''
         while True:
-            try:
-                data = client.recv(size)
-                if data:
-                    #print ("%c"%data).encode('hex')
-                    tag = '%s%s'%(tag,data)
-                    if len(tag) == TAG_SIZE:
-                      self.on_tag_received(tag)
-                      tag = ''
-                else:
-                    raise error('Client disconnected')
-            except:
-                client.close()
-                return False
+          data = client.recv(size)
+          if data:
+            #print ("%c"%data).encode('hex')
+            tag = '%s%s'%(tag,data)
+            if len(tag) == TAG_SIZE:
+              self.on_tag_received(tag)
+              tag = ''
+          else:
+            client.close()
+            break
 
 if __name__ == "__main__":
   port_num = 6677
