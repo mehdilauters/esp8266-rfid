@@ -5,11 +5,12 @@ Configure your parameters in user/user_config.h
 
 run on your server 
 
-```python /tmp/server.py 5555
+````
+python /tmp/server.py 5555
 starting up on 0.0.0.0 port 5555
 waiting for a connection
 client connected:waiting for a connection
  ('54.145.90.17', 44844)
 tag 7800F011A6 received
 tag 7800F8CC97 received
-```
+````
