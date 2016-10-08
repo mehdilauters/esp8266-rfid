@@ -6,60 +6,12 @@
 
 #include "user_interface.h"
 
-ip_addr_t m_server_ip;
-
 void user_rf_pre_init(void) {
 }
 
 
-void data_received( void *arg, char *pdata, unsigned short len )
-{
-  DEBUG( "%s \n", __FUNCTION__);
-}
-
-
-static void ICACHE_FLASH_ATTR tcp_reconnect(void *arg, sint8 errType)
-{
-  DEBUG( "%s\n", __FUNCTION__);
-  struct espconn *pespconn = (struct espconn *) arg;
-  espconn_delete(pespconn);
-  //   sync_done(false);
-}
-
-void tcp_connect_start( void *arg )
-{
-  DEBUG( "%s\n", __FUNCTION__);
-  uint8_t count;
-  struct espconn *conn = arg;
-  
-  for(count = 0; count < MAX_TRIES; count++) {
-    if(CONNECT(conn)) {
-      break;
-    }
-  }
-}
-
-void tcp_disconnected( void *arg )
-{
-  DEBUG( "%s\n", __FUNCTION__);
-}
-
-void data_sent(void *arg)
-{
-  DEBUG( "%s\n", __FUNCTION__);
-  struct espconn *conn = arg;
-  os_printf("+\n");
-}
-
-void tcp_connected( void *arg )
-{
-  DEBUG( "%s\n", __FUNCTION__);
-  struct espconn *conn = arg;
-  espconn_regist_recvcb( conn, data_received );
-  espconn_regist_sentcb( conn, data_sent);
-  
-  rfid_start();
-  
+bool get_button_pressed() {
+  return GPIO_INPUT_GET(0) == 0;
 }
 
 void dns_done( const char *name, ip_addr_t *ipaddr, void *arg )
@@ -73,21 +25,9 @@ void dns_done( const char *name, ip_addr_t *ipaddr, void *arg )
     DEBUG("found server %d.%d.%d.%d\n",
           *((uint8 *)&ipaddr->addr), *((uint8 *)&ipaddr->addr + 1), *((uint8 *)&ipaddr->addr + 2), *((uint8 *)&ipaddr->addr + 3));
     
-    struct espconn *conn = arg;
+    os_memcpy(&(m_server_ip.addr), ipaddr, 4 );
     
-    conn->type = ESPCONN_TCP;
-    conn->state = ESPCONN_NONE;
-    conn->proto.tcp=&m_tcp;
-    conn->proto.tcp->local_port = espconn_port();
-    conn->proto.tcp->remote_port = PORT;
-    os_memcpy( conn->proto.tcp->remote_ip, &ipaddr->addr, 4 );
-    
-    espconn_regist_connectcb( conn, tcp_connected );
-    espconn_regist_disconcb( conn, tcp_disconnected );
-    espconn_regist_reconcb(conn, tcp_reconnect);
-    
-    
-    tcp_connect_start(arg);
+    rfid_start();
   }
 }
 
