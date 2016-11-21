@@ -3,8 +3,51 @@
 #include "gpio.h"
 #include "user_config.h"
 #include "uart.h"
-
+#include "flash.h"
 #include "user_interface.h"
+#include "page.h"
+
+static struct espconn httpconfig_conn;
+static esp_tcp httpconfig_tcp_conn;
+
+
+static void ICACHE_FLASH_ATTR httpconfig_recv_cb(void *arg, char *data, unsigned short len) {
+  struct espconn *conn=(struct espconn *)arg;
+  
+  espconn_disconnect(conn);
+}
+
+static void ICACHE_FLASH_ATTR httpconfig_recon_cb(void *arg, sint8 err) {
+}
+
+static void ICACHE_FLASH_ATTR httpconfig_discon_cb(void *arg) {
+}
+
+static void ICACHE_FLASH_ATTR httpconfig_sent_cb(void *arg) {
+}
+
+static void ICACHE_FLASH_ATTR httpconfig_connected_cb(void *arg) {
+  struct espconn *conn=arg;
+  
+  espconn_regist_recvcb  (conn, httpconfig_recv_cb);
+  espconn_regist_reconcb (conn, httpconfig_recon_cb);
+  espconn_regist_disconcb(conn, httpconfig_discon_cb);
+  espconn_regist_sentcb  (conn, httpconfig_sent_cb);
+  sint8 d = espconn_sent(conn,page_content,strlen(page_content));
+}
+
+
+void ICACHE_FLASH_ATTR httpconfig_conn_init() {
+  
+  httpconfig_conn.type=ESPCONN_TCP;
+  httpconfig_conn.state=ESPCONN_NONE;
+  httpconfig_tcp_conn.local_port=80;
+  httpconfig_conn.proto.tcp=&httpconfig_tcp_conn;
+  
+  espconn_regist_connectcb(&httpconfig_conn, httpconfig_connected_cb);
+  espconn_accept(&httpconfig_conn);
+}
+
 
 void user_rf_pre_init(void) {
 }
@@ -85,12 +128,62 @@ bool connect(const char* _essid, const char * _key)
   wifi_station_connect();
 }
 
+void setup_configuration_wifi()
+{
+    os_printf("Start in config mode\n");
+    struct softap_config config;
+    wifi_softap_get_config(&config); // Get config first.
+
+    char ssid[32] = "esp-rfid";
+    char password[33] = "";
+    char macaddr[6];
+    
+    wifi_softap_get_config(&config);
+    wifi_get_macaddr(SOFTAP_IF, macaddr);
+    
+    os_memset(config.ssid, 0, 32);
+    os_memcpy(config.ssid, ssid, 32);
+    os_memset(config.password, 0, sizeof(config.password));
+    os_memcpy(config.password, password, os_strlen(password));
+    config.authmode = AUTH_OPEN;
+    config.beacon_interval = 100;
+    config.ssid_len = strlen(ssid);
+    
+    os_printf("Creating %s\n", config.ssid);
+    wifi_set_opmode(SOFTAP_MODE);
+    wifi_softap_set_config(&config);
+    wifi_softap_dhcps_start();
+    
+    httpconfig_conn_init();
+}
+
+void ICACHE_FLASH_ATTR init_done(void) {
+    os_printf("esp8266_%d, Sdk version %s\n", system_get_chip_id(), system_get_sdk_version());
+    DEBUG("Hello\n");
+//     flash_erase_all();
+    char ssid[32];
+    char wpa[32];
+    int res_ssid = flash_key_value_get("ssid",ssid);
+    int res_wpa = flash_key_value_get("ssid",wpa);
+    if(res_ssid == 1 && res_wpa == 1) {
+        connect(ssid, wpa);
+    } else  {
+        os_printf("Config not found, reset\n");
+        // key not found
+        // first format flash
+        flash_erase_all();
+        setup_configuration_wifi();
+    }
+    
+}
+
+
 //Init function 
 void ICACHE_FLASH_ATTR
 user_init()
 {
-  uart_init(BIT_RATE_9600, BIT_RATE_9600);
-  DEBUG("Hello\n");
+    wifi_set_opmode(STATION_MODE);
+    uart_init(BIT_RATE_115200, BIT_RATE_115200);
   
-  connect(ESSID, PWD);
+  system_init_done_cb(init_done);
 }
