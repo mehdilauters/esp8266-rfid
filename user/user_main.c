@@ -10,9 +10,49 @@
 static struct espconn httpconfig_conn;
 static esp_tcp httpconfig_tcp_conn;
 
+void remove_trailing_spaces(char *_in, char *_out) {
+  do while(isspace(*_in)) _in++; while(*_out++ = *_in++);
+}
+
+static void ICACHE_FLASH_ATTR save_network(char * _essid, char *_password) {
+  os_printf("saving essid=%s, password=%s to flash",_essid, _password);
+//   int res_ssid = flash_key_value_set("ssid",_essid);
+//   int res_wpa = flash_key_value_set("wpa",_password);
+//   
+//   if(res_ssid == 0 || res_wpa == 0) {
+//     os_printf("Error saving to flash\n");
+//   }
+}
 
 static void ICACHE_FLASH_ATTR httpconfig_recv_cb(void *arg, char *data, unsigned short len) {
   struct espconn *conn=(struct espconn *)arg;
+  os_printf("==========\n");
+  os_printf("%s\n",data);
+  os_printf("==========\n");
+  //TODO NOT WORKING
+  const char * essid_key = "name=\"essid\"";
+  const char * password_key = "&password=";
+  
+  char * essid_start = strstr(data, essid_key);
+  const char * password_start = strstr(data, password_key);
+  
+  char essid[256];
+  
+  remove_trailing_spaces(essid_start, essid);
+  os_printf(">>>>>%s\n",essid);
+  if(essid_start != NULL) {
+    essid_start += strlen(essid_key);
+    int count = password_start - essid_start;
+    strncpy(essid, essid_start, count);
+  }
+  
+  if(password_start != NULL) {
+    password_start += strlen(password_key);
+  }
+  
+  if(password_start != NULL && essid_start != NULL) {
+    save_network(essid, (char*)password_start);
+  }
   
   espconn_disconnect(conn);
 }
@@ -164,7 +204,7 @@ void ICACHE_FLASH_ATTR init_done(void) {
     char ssid[32];
     char wpa[32];
     int res_ssid = flash_key_value_get("ssid",ssid);
-    int res_wpa = flash_key_value_get("ssid",wpa);
+    int res_wpa = flash_key_value_get("wpa",wpa);
     if(res_ssid == 1 && res_wpa == 1) {
         connect(ssid, wpa);
     } else  {
