@@ -19,63 +19,47 @@ char * find_word(char *_in) {
 
 static void ICACHE_FLASH_ATTR save_network(char * _essid, char *_password) {
   os_printf("saving essid=%s, password=%s to flash",_essid, _password);
-//   int res_ssid = flash_key_value_set("ssid",_essid);
-//   int res_wpa = flash_key_value_set("wpa",_password);
-//   
-//   if(res_ssid == 0 || res_wpa == 0) {
-//     os_printf("Error saving to flash\n");
-//   }
+  int res_ssid = flash_key_value_set("ssid",_essid);
+  int res_wpa = flash_key_value_set("wpa",_password);
+  
+  if(res_ssid == 0 || res_wpa == 0) {
+    os_printf("Error saving to flash\n");
+    flash_erase_all();
+  }
 }
 
 static void ICACHE_FLASH_ATTR httpconfig_recv_cb(void *arg, char *data, unsigned short len) {
   struct espconn *conn=(struct espconn *)arg;
-  os_printf("==========\n");
-  os_printf("%s\n",data);
-  os_printf("==========\n");
-  //TODO NOT WORKING
   const char * essid_key = "name=\"essid\"\r\n\r\n";
-  const char * essid_key_end = "\r\n--";
-  const char * password_key = "&password=";
+  const char * key_end = "\r\n--";
+  const char * password_key = "name=\"password\"\r\n\r\n";
   
   char * essid_start = strstr(data, essid_key);
-  essid_start += strlen(essid_key);
-  
-  char * essid_end = strstr(essid_start, essid_key_end);
-  
-  int essid_len = essid_end - essid_start;
-  char buffer[256];
-  os_memcpy(buffer, essid_start, essid_len);
-  buffer[essid_len] = '\0';
-  
-  os_printf("essid is >>%s<<\n", buffer);
-  
-  const char * password_start = strstr(data, password_key);
-  
-  int i;
-  for(i=0; i<10;i++)
-    os_printf(" %x ", essid_start[i]);
-  
-  essid_start = find_word(essid_start);
-  os_printf("\n>>>>>%s\n",essid_start);
-  
-//   char essid[256];
-//   
-//   remove_trailing_spaces(essid_start, essid);
-//   os_printf(">>>>>%s\n",essid);
-//   if(essid_start != NULL) {
-//     essid_start += strlen(essid_key);
-//     int count = password_start - essid_start;
-//     strncpy(essid, essid_start, count);
-//   }
-//   
-//   if(password_start != NULL) {
-//     password_start += strlen(password_key);
-//   }
-//   
-//   if(password_start != NULL && essid_start != NULL) {
-//     save_network(essid, (char*)password_start);
-//   }
-//   
+  if( essid_start != NULL ) {
+    essid_start += strlen(essid_key);
+    
+    char * essid_end = strstr(essid_start, key_end);
+    
+    int str_len = essid_end - essid_start;
+    char essid[128];
+    os_memcpy(essid, essid_start, str_len);
+    essid[str_len] = '\0';
+    
+    const char * password_start = strstr(data, password_key);
+    
+    if( password_start != NULL ) {
+      password_start += strlen(password_key);
+      char * password_end = strstr(password_start, key_end);
+      
+      char password[128];
+      str_len = password_end - password_start;
+      os_memcpy(password, password_start, str_len);
+      password[str_len] = '\0';
+      
+      save_network(essid, password);
+    }
+
+  }
   espconn_disconnect(conn);
 }
 
