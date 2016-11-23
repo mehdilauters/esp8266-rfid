@@ -10,8 +10,11 @@
 static struct espconn httpconfig_conn;
 static esp_tcp httpconfig_tcp_conn;
 
-void remove_trailing_spaces(char *_in, char *_out) {
-  do while(isspace(*_in)) _in++; while(*_out++ = *_in++);
+char * find_word(char *_in) {
+  while(isspace(*_in)) {
+    _in++;
+  }
+  return _in;
 }
 
 static void ICACHE_FLASH_ATTR save_network(char * _essid, char *_password) {
@@ -30,30 +33,49 @@ static void ICACHE_FLASH_ATTR httpconfig_recv_cb(void *arg, char *data, unsigned
   os_printf("%s\n",data);
   os_printf("==========\n");
   //TODO NOT WORKING
-  const char * essid_key = "name=\"essid\"";
+  const char * essid_key = "name=\"essid\"\r\n\r\n";
+  const char * essid_key_end = "\r\n--";
   const char * password_key = "&password=";
   
   char * essid_start = strstr(data, essid_key);
+  essid_start += strlen(essid_key);
+  
+  char * essid_end = strstr(essid_start, essid_key_end);
+  
+  int essid_len = essid_end - essid_start;
+  char buffer[256];
+  os_memcpy(buffer, essid_start, essid_len);
+  buffer[essid_len] = '\0';
+  
+  os_printf("essid is >>%s<<\n", buffer);
+  
   const char * password_start = strstr(data, password_key);
   
-  char essid[256];
+  int i;
+  for(i=0; i<10;i++)
+    os_printf(" %x ", essid_start[i]);
   
-  remove_trailing_spaces(essid_start, essid);
-  os_printf(">>>>>%s\n",essid);
-  if(essid_start != NULL) {
-    essid_start += strlen(essid_key);
-    int count = password_start - essid_start;
-    strncpy(essid, essid_start, count);
-  }
+  essid_start = find_word(essid_start);
+  os_printf("\n>>>>>%s\n",essid_start);
   
-  if(password_start != NULL) {
-    password_start += strlen(password_key);
-  }
-  
-  if(password_start != NULL && essid_start != NULL) {
-    save_network(essid, (char*)password_start);
-  }
-  
+//   char essid[256];
+//   
+//   remove_trailing_spaces(essid_start, essid);
+//   os_printf(">>>>>%s\n",essid);
+//   if(essid_start != NULL) {
+//     essid_start += strlen(essid_key);
+//     int count = password_start - essid_start;
+//     strncpy(essid, essid_start, count);
+//   }
+//   
+//   if(password_start != NULL) {
+//     password_start += strlen(password_key);
+//   }
+//   
+//   if(password_start != NULL && essid_start != NULL) {
+//     save_network(essid, (char*)password_start);
+//   }
+//   
   espconn_disconnect(conn);
 }
 
