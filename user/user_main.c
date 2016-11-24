@@ -9,6 +9,7 @@
 
 static struct espconn httpconfig_conn;
 static esp_tcp httpconfig_tcp_conn;
+static bool _is_connected;
 
 char * find_word(char *_in) {
   while(isspace(*_in)) {
@@ -17,48 +18,89 @@ char * find_word(char *_in) {
   return _in;
 }
 
-static void ICACHE_FLASH_ATTR save_network(char * _essid, char *_password) {
-  os_printf("saving essid=%s, password=%s to flash",_essid, _password);
+static bool ICACHE_FLASH_ATTR save_network(char * _essid, char *_password) {
+  os_printf("saving essid=%s, password=%s to flash\n",_essid, _password);
   int res_ssid = flash_key_value_set("ssid",_essid);
   int res_wpa = flash_key_value_set("wpa",_password);
   
   if(res_ssid == 0 || res_wpa == 0) {
     os_printf("Error saving to flash\n");
     flash_erase_all();
+    return false;
   }
+  
+  return true;
+}
+
+
+static bool ICACHE_FLASH_ATTR save_server(char * _server, int _port) {
+  os_printf("saving server http://%s:%d to flash\n",_server, _port);
+  int res_server = flash_key_value_set("server",_server);
+  
+  char port[5];
+  if(os_sprintf(port, "%d", _port)) {
+    int res_port = flash_key_value_set("port",port);
+    
+    if(res_server == 0 || res_port == 0) {
+      os_printf("Error saving to flash\n");
+      flash_erase_all();
+      return false;
+    }
+  } else {
+    os_printf("bad port %s\n", _port);
+  }
+  
+  return false;
+}
+
+static bool ICACHE_FLASH_ATTR http_get_post_value(char *_data, char * _key, char *_output) {
+  char start_key[64];
+  const char * key_end = "\r\n--";
+  
+  if(os_sprintf(start_key, "name=\"%s\"\r\n\r\n", _key) > 0) {
+    char * value_start = strstr(_data, start_key);
+    if(value_start != NULL) {
+      value_start += strlen(start_key);
+      char * value_end = strstr(value_start, key_end);
+      
+      int value_len = value_end - value_start;
+      os_memcpy(_output, value_start, value_len);
+      _output[value_len] = '\0';
+      return true;
+    }
+  }
+  _output[0] = '\0';
+  return false;
 }
 
 static void ICACHE_FLASH_ATTR httpconfig_recv_cb(void *arg, char *data, unsigned short len) {
   struct espconn *conn=(struct espconn *)arg;
-  const char * essid_key = "name=\"essid\"\r\n\r\n";
-  const char * key_end = "\r\n--";
-  const char * password_key = "name=\"password\"\r\n\r\n";
   
-  char * essid_start = strstr(data, essid_key);
-  if( essid_start != NULL ) {
-    essid_start += strlen(essid_key);
+  char essid[33];
+  char password[128];
+  
+  bool res = http_get_post_value(data, "essid", essid);
+  res &= http_get_post_value(data, "password", password);
+  
+  bool reset = false;
+  
+  if(res && essid[0] != '\0' && password[0] != '\0') {
+    reset = save_network(essid, password);
+  }
+  
+  char server[128];
+  char port[5];
+  
+  res = http_get_post_value(data, "server", server);
+  res &= http_get_post_value(data, "port", port);
     
-    char * essid_end = strstr(essid_start, key_end);
-    
-    int str_len = essid_end - essid_start;
-    char essid[128];
-    os_memcpy(essid, essid_start, str_len);
-    essid[str_len] = '\0';
-    
-    const char * password_start = strstr(data, password_key);
-    
-    if( password_start != NULL ) {
-      password_start += strlen(password_key);
-      char * password_end = strstr(password_start, key_end);
-      
-      char password[128];
-      str_len = password_end - password_start;
-      os_memcpy(password, password_start, str_len);
-      password[str_len] = '\0';
-      
-      save_network(essid, password);
-    }
-
+  if(res && server[0] != '\0' && port[0] != '\0') {
+    int port_number = strtol(port, NULL, 10);
+    save_server(server, port_number);
+  }
+  
+  if(reset) {
+    system_restart();
   }
   espconn_disconnect(conn);
 }
@@ -115,8 +157,7 @@ void dns_done( const char *name, ip_addr_t *ipaddr, void *arg )
           *((uint8 *)&ipaddr->addr), *((uint8 *)&ipaddr->addr + 1), *((uint8 *)&ipaddr->addr + 2), *((uint8 *)&ipaddr->addr + 3));
     
     os_memcpy(&(m_server_ip.addr), ipaddr, 4 );
-    
-    rfid_start();
+    _is_connected = true;
   }
 }
 
@@ -199,14 +240,12 @@ void setup_configuration_wifi()
     wifi_set_opmode(SOFTAP_MODE);
     wifi_softap_set_config(&config);
     wifi_softap_dhcps_start();
-    
-    httpconfig_conn_init();
 }
 
 void ICACHE_FLASH_ATTR init_done(void) {
     os_printf("esp8266_%d, Sdk version %s\n", system_get_chip_id(), system_get_sdk_version());
     DEBUG("Hello\n");
-//     flash_erase_all();
+    flash_erase_all();
     char ssid[32];
     char wpa[32];
     int res_ssid = flash_key_value_get("ssid",ssid);
@@ -220,14 +259,19 @@ void ICACHE_FLASH_ATTR init_done(void) {
         flash_erase_all();
         setup_configuration_wifi();
     }
-    
+    httpconfig_conn_init();
+    rfid_start();
 }
 
+bool is_connected() {
+  return _is_connected;
+}
 
 //Init function 
 void ICACHE_FLASH_ATTR
 user_init()
 {
+    _is_connected = false;
     wifi_set_opmode(STATION_MODE);
     uart_init(BIT_RATE_115200, BIT_RATE_115200);
   

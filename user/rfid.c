@@ -117,25 +117,29 @@ void tcp_connected( void *arg )
 
 void tag_process() {
   DEBUG("Processing tag\n");
-  struct espconn *conn = &m_conn;
-  
-  conn->type = ESPCONN_TCP;
-  conn->state = ESPCONN_NONE;
-  conn->proto.tcp=&m_tcp;
-  conn->proto.tcp->local_port = espconn_port();
-  conn->proto.tcp->remote_port = PORT;
-  os_memcpy( conn->proto.tcp->remote_ip, &(m_server_ip.addr), 4 );
-  
-  DEBUG("=====\n" IPSTR ,
-  IP2STR(&m_server_ip),
-  "=====\n");
-//   os_printf("====>%d", ((uint8_t*)m_server_ip.addr)[0]);
-  espconn_regist_connectcb( conn, tcp_connected );
-  espconn_regist_disconcb( conn, tcp_disconnected );
-  espconn_regist_reconcb(conn, tcp_reconnect);
-  
-  
-  tcp_connect_start(conn);
+  if(is_connected()) {
+    struct espconn *conn = &m_conn;
+    
+    conn->type = ESPCONN_TCP;
+    conn->state = ESPCONN_NONE;
+    conn->proto.tcp=&m_tcp;
+    conn->proto.tcp->local_port = espconn_port();
+    conn->proto.tcp->remote_port = PORT;
+    os_memcpy( conn->proto.tcp->remote_ip, &(m_server_ip.addr), 4 );
+    
+    DEBUG("=====\n" IPSTR ,
+    IP2STR(&m_server_ip),
+    "=====\n");
+  //   os_printf("====>%d", ((uint8_t*)m_server_ip.addr)[0]);
+    espconn_regist_connectcb( conn, tcp_connected );
+    espconn_regist_disconcb( conn, tcp_disconnected );
+    espconn_regist_reconcb(conn, tcp_reconnect);
+    
+    
+    tcp_connect_start(conn);
+  } else {
+   os_printf("not connected\n"); 
+  }
 }
 
 static void ICACHE_FLASH_ATTR button_triggered() {
