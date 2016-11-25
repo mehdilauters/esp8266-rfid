@@ -1,12 +1,6 @@
 #ifndef USER_CONFIG_HPP
 #define USER_CONFIG_HPP
 
-#define ESSID "MY_SSID"
-#define PWD   "MY_PWD"
-
-#define SERVER "my.server.fr"
-#define PORT 5555
-
 #define MAX_TRIES 5
 
 #define BUTTON_TAG_VALUE "AF00AF00AF"

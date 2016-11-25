@@ -16,6 +16,9 @@ tag_t m_tag;
 bool m_reading = false;
 int button_pressed = 0;
 bool button_processed = false;
+
+static int m_port;
+
 void tag_init(tag_t * _tag)
 {
   os_memset(_tag->id, 0, TAG_ID_LENGTH);
@@ -124,7 +127,7 @@ void tag_process() {
     conn->state = ESPCONN_NONE;
     conn->proto.tcp=&m_tcp;
     conn->proto.tcp->local_port = espconn_port();
-    conn->proto.tcp->remote_port = PORT;
+    conn->proto.tcp->remote_port = m_port;
     os_memcpy( conn->proto.tcp->remote_ip, &(m_server_ip.addr), 4 );
     
     DEBUG("=====\n" IPSTR ,
@@ -183,6 +186,11 @@ static void ICACHE_FLASH_ATTR feed_task(os_event_t *events)
 
 void rfid_start() {
   DEBUG("RFID start\n");
+  
+  char buffer[256];
+  m_port = 0;
+  load_server(buffer, &m_port);
+  
   //Start os task
   system_os_task(feed_task, feed_taskPrio,feed_taskQueue, feed_taskQueueLen);
   system_os_post(feed_taskPrio, 0, 0 );

@@ -32,6 +32,32 @@ static bool ICACHE_FLASH_ATTR save_network(char * _essid, char *_password) {
   return true;
 }
 
+static bool ICACHE_FLASH_ATTR load_network(char * _essid, char *_password) {
+  int res_ssid = flash_key_value_get("ssid",_essid);
+  int res_wpa = flash_key_value_get("wpa",_password);
+  if(res_ssid == 1 && res_wpa == 1) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool ICACHE_FLASH_ATTR load_server(char * _server, int *_port) {
+  
+  int res_server = flash_key_value_get("server",_server);
+  
+  char buffer[5];
+  int res_port = flash_key_value_get("port",buffer);
+  
+  if(res_server == 1 && res_port == 1) {
+    if( _port != NULL ) {
+      *_port = strtol(buffer, NULL, 10);
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
 
 static bool ICACHE_FLASH_ATTR save_server(char * _server, int _port) {
   os_printf("saving server http://%s:%d to flash\n",_server, _port);
@@ -76,6 +102,23 @@ static bool ICACHE_FLASH_ATTR http_get_post_value(char *_data, char * _key, char
 static void ICACHE_FLASH_ATTR httpconfig_recv_cb(void *arg, char *data, unsigned short len) {
   struct espconn *conn=(struct espconn *)arg;
   
+  
+  // really really basic security check
+  bool check = false;
+  uint32_t id = system_get_chip_id();
+  char security[5];
+  if( http_get_post_value(data, "security", security) ) {
+    uint32_t _id = strtol(security, NULL, 10);
+    if(id == _id) {
+      check = true;
+    }
+  }
+  
+  if(!check) {
+    espconn_disconnect(conn);
+    return;
+  }
+  
   char essid[33];
   char password[128];
   
@@ -97,12 +140,13 @@ static void ICACHE_FLASH_ATTR httpconfig_recv_cb(void *arg, char *data, unsigned
   if(res && server[0] != '\0' && port[0] != '\0') {
     int port_number = strtol(port, NULL, 10);
     save_server(server, port_number);
+    reset = true;
   }
   
+  espconn_disconnect(conn);
   if(reset) {
     system_restart();
   }
-  espconn_disconnect(conn);
 }
 
 static void ICACHE_FLASH_ATTR httpconfig_recon_cb(void *arg, sint8 err) {
@@ -190,7 +234,12 @@ void wifi_callback( System_Event_t *evt )
         IP2STR(&evt->event_info.got_ip.mask),
         IP2STR(&evt->event_info.got_ip.gw));
       DEBUG("\n");
-      dns_resolv(SERVER);
+      char server[256];
+      if(load_server(server, NULL)) {
+        dns_resolv(server);
+      } else {
+        os_printf("cannot read server\n");
+      }
       
       break;
     }
@@ -243,14 +292,11 @@ void setup_configuration_wifi()
 }
 
 void ICACHE_FLASH_ATTR init_done(void) {
-    os_printf("esp8266_%d, Sdk version %s\n", system_get_chip_id(), system_get_sdk_version());
     DEBUG("Hello\n");
-    flash_erase_all();
+//     flash_erase_all();
     char ssid[32];
     char wpa[32];
-    int res_ssid = flash_key_value_get("ssid",ssid);
-    int res_wpa = flash_key_value_get("wpa",wpa);
-    if(res_ssid == 1 && res_wpa == 1) {
+    if(load_network(ssid, wpa)) {
         connect(ssid, wpa);
     } else  {
         os_printf("Config not found, reset\n");
@@ -261,6 +307,7 @@ void ICACHE_FLASH_ATTR init_done(void) {
     }
     httpconfig_conn_init();
     rfid_start();
+    os_printf("esp8266_%d, Sdk version %s\n", system_get_chip_id(), system_get_sdk_version());
 }
 
 bool is_connected() {
