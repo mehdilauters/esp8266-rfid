@@ -322,6 +322,7 @@ void setup_configuration_wifi()
     wifi_set_opmode(SOFTAP_MODE);
     wifi_softap_set_config(&config);
     wifi_softap_dhcps_start();
+    captdnsInit();
 }
 
 void ICACHE_FLASH_ATTR init_done(void) {
