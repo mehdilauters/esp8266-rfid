@@ -11,18 +11,25 @@ static struct espconn httpconfig_conn;
 static esp_tcp httpconfig_tcp_conn;
 static bool _is_connected;
 
-char * find_word(char *_in) {
-  while(isspace(*_in)) {
-    _in++;
+char* replace(char* str, char* a, char* b)
+{
+  int len  = strlen(str);
+  int lena = strlen(a), lenb = strlen(b);
+  char *p;
+  for (p = str; p = strstr(p, a); ++p) {
+    if (lena != lenb) // shift end as needed
+      memmove(p+lenb, p+lena,
+              len - (p - str) + lenb);
+      memcpy(p, b, lenb);
+    p+=strlen(b);
   }
-  return _in;
+  return str;
 }
 
 static bool ICACHE_FLASH_ATTR save_network(char * _essid, char *_password) {
   os_printf("saving essid=%s, password=%s to flash\n",_essid, _password);
   int res_ssid = flash_key_value_set("ssid",_essid);
   int res_wpa = flash_key_value_set("wpa",_password);
-  
   if(res_ssid == 0 || res_wpa == 0) {
     os_printf("Error saving to flash\n");
     flash_erase_all();
@@ -165,7 +172,33 @@ static void ICACHE_FLASH_ATTR httpconfig_connected_cb(void *arg) {
   espconn_regist_reconcb (conn, httpconfig_recon_cb);
   espconn_regist_disconcb(conn, httpconfig_discon_cb);
   espconn_regist_sentcb  (conn, httpconfig_sent_cb);
-  sint8 d = espconn_sent(conn,page_content,strlen(page_content));
+  int size = strlen(page_content)+128;
+  char buffer[size];
+  os_memset(buffer,0,size);
+  os_sprintf(buffer, "%s", page_content);
+  
+  char ssid[32];
+  char wpa[32];
+  if(load_network(ssid, wpa)) {
+    replace(buffer, "ESSID", ssid);
+  } else {
+    replace(buffer, "ESSID", "NONE");
+  }
+  
+  char server[256];
+  int port = 0;
+  if(load_server(server, &port)) {
+    
+    replace(buffer, "SERVER", server);
+    char tmp[5];
+    os_sprintf(tmp, "%d", port);
+    replace(buffer, "PORT", tmp);
+  } else {
+    replace(buffer, "SERVER", "0.0.0.0");
+    replace(buffer, "PORT", "-1");
+  }
+  
+  sint8 d = espconn_sent(conn,buffer,strlen(buffer));
 }
 
 
