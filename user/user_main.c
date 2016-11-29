@@ -6,6 +6,8 @@
 #include "flash.h"
 #include "user_interface.h"
 #include "page.h"
+#include "upg.h"
+
 
 static struct espconn httpconfig_conn;
 static esp_tcp httpconfig_tcp_conn;
@@ -230,11 +232,16 @@ void dns_done( const char *name, ip_addr_t *ipaddr, void *arg )
   }
   else
   {
-    DEBUG("found server %d.%d.%d.%d\n",
-          *((uint8 *)&ipaddr->addr), *((uint8 *)&ipaddr->addr + 1), *((uint8 *)&ipaddr->addr + 2), *((uint8 *)&ipaddr->addr + 3));
+    char ip[20];
+    os_memset(ip, 0, 20);
+    os_sprintf(ip, "%d.%d.%d.%d",
+               *((uint8 *)&ipaddr->addr), *((uint8 *)&ipaddr->addr + 1), *((uint8 *)&ipaddr->addr + 2), *((uint8 *)&ipaddr->addr + 3));
+    DEBUG("found server %s\n", ip);
     
     os_memcpy(&(m_server_ip.addr), ipaddr, 4 );
     _is_connected = true;
+    
+    handleUpgrade(2, ip,8888,"app.out");
   }
 }
 
