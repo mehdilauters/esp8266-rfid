@@ -10,6 +10,8 @@
 #include <lwip/api.h>
 
 #include "captdns.h"
+#include "webserver.h"
+
 
 static bool load_network(struct sdk_station_config* _config) {
   char buffer[128];
@@ -63,6 +65,7 @@ void setup_ap() {
   IP4_ADDR(&first_client_ip, 172, 16, 0, 2);
   dhcpserver_start(&first_client_ip, 4);
   
+  webserverInit();
   captdnsInit();
 }
 

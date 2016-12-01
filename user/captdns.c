@@ -338,5 +338,6 @@ captdns_task(void *pvParameters)
 
 void   captdnsInit(void)
 {
+  printf("starting dns\n");
   xTaskCreate(captdns_task, (const char *)"captdns_task", 192, NULL, 3, NULL);//1024,866
 }
