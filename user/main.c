@@ -12,8 +12,20 @@
 #include "captdns.h"
 #include "webserver.h"
 
+bool save_network(char * _essid, char *_password) {
+  printf("saving essid=%s, password=%s to flash\n",_essid, _password);
+  int res_ssid = flash_key_value_set("ssid",_essid);
+  int res_wpa = flash_key_value_set("wpa",_password);
+  if(res_ssid == 0 || res_wpa == 0) {
+    printf("Error saving to flash\n");
+    flash_erase_all();
+    return false;
+  }
+  
+  return true;
+}
 
-static bool load_network(struct sdk_station_config* _config) {
+bool load_network(struct sdk_station_config* _config) {
   char buffer[128];
   int res = flash_key_value_get("ssid",buffer);
   if(res == 0) {
@@ -31,6 +43,27 @@ static bool load_network(struct sdk_station_config* _config) {
   
   strcpy((char*)_config->password, buffer);
   return true;  
+}
+
+
+bool save_server(char * _server, int _port) {
+  printf("saving server http://%s:%d to flash\n",_server, _port);
+  int res_server = flash_key_value_set("server",_server);
+  
+  char port[5];
+  if(sprintf(port, "%d", _port)) {
+    int res_port = flash_key_value_set("port",port);
+    
+    if(res_server == 0 || res_port == 0) {
+      printf("Error saving to flash\n");
+      flash_erase_all();
+      return false;
+    }
+  } else {
+    printf("bad port %d\n", _port);
+  }
+  
+  return false;
 }
 
 void connect(struct sdk_station_config* _config) {
@@ -78,5 +111,8 @@ void user_init() {
   } else {
     setup_ap();
   }
+  
+  uint32_t id = sdk_system_get_chip_id();
+  printf("#%d\n", id);
   
 }
