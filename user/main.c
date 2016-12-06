@@ -1,5 +1,6 @@
 #include "config.h"
 #include "espressif/esp_common.h"
+#include "esp/gpio.h"
 #include "esp/uart.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -11,6 +12,10 @@
 
 #include "captdns.h"
 #include "webserver.h"
+#include "rfid.h"
+
+
+static bool _is_connected;
 
 bool save_network(char * _essid, char *_password) {
   printf("saving essid=%s, password=%s to flash\n",_essid, _password);
@@ -19,7 +24,7 @@ bool save_network(char * _essid, char *_password) {
   if(res_ssid == 0 || res_wpa == 0) {
     printf("Error saving to flash\n");
     flash_erase_all();
-    return false;
+    return save_network(_essid, _password);
   }
   
   return true;
@@ -66,10 +71,33 @@ bool save_server(char * _server, int _port) {
   return false;
 }
 
+bool load_server(char * _server, int *_port) {
+  
+  int res_server = flash_key_value_get("server",_server);
+  
+  char buffer[5];
+  int res_port = flash_key_value_get("port",buffer);
+  
+  if(res_server == 1 && res_port == 1) {
+    if( _port != NULL ) {
+      *_port = strtol(buffer, NULL, 10);
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+bool get_button_pressed() {
+  return gpio_read(0) != false;
+}
+
 void connect(struct sdk_station_config* _config) {
   printf("connecting to %s\n",_config->ssid);
   sdk_wifi_set_opmode(STATION_MODE);
   sdk_wifi_station_set_config(_config);
+  _is_connected = true;
 }
 
 void setup_ap() {
@@ -97,13 +125,17 @@ void setup_ap() {
   ip_addr_t first_client_ip;
   IP4_ADDR(&first_client_ip, 172, 16, 0, 2);
   dhcpserver_start(&first_client_ip, 4);
-  
-  webserverInit();
   captdnsInit();
 }
 
+bool is_connected() {
+  return _is_connected;
+}
+
+
 //Init function 
 void user_init() {
+  _is_connected = false;
   uart_set_baud(0, 115200);
   struct sdk_station_config config;
   if(load_network(&config)) {
@@ -111,6 +143,9 @@ void user_init() {
   } else {
     setup_ap();
   }
+  
+  webserverInit();
+  rfid_start();
   
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);

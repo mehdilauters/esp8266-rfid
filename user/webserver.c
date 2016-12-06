@@ -142,6 +142,10 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
     }
   }
   
+  if(reset) {
+    sdk_system_restart();
+  }
+  
   return 0;
 }
 
