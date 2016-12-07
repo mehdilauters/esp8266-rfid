@@ -3,8 +3,13 @@
 #include <string.h>
 #include "espressif/esp_common.h"
 
- 
- char *find_key(const char *key,char *settings) {
+// #define START_SECTOR 0x3C
+// #define START_ADDRESS 0x3C000
+
+#define START_SECTOR 0x7E
+#define START_ADDRESS 0x7E000
+
+char *find_key(const char *key,char *settings) {
  
   int n;
   for(n=0;n<1024;n+=128) {
@@ -29,8 +34,8 @@ void flash_erase_all() {
   for(n=0;n<1024;n++) settings[n]=0;
  
 //   ETS_UART_INTR_DISABLE();
-  sdk_spi_flash_erase_sector(0x3C);
-  sdk_spi_flash_write(0x3C000,(uint32_t *)settings,1024);
+  sdk_spi_flash_erase_sector(START_SECTOR);
+  sdk_spi_flash_write(START_ADDRESS,(uint32_t *)settings,1024);
 //   ETS_UART_INTR_ENABLE();
 }
  
@@ -41,7 +46,7 @@ int flash_key_value_set(const char *key,const char *value) {
   if(strlen(value) > 64) return 1;
  
   char settings[1024];
-  sdk_spi_flash_read(0x3C000, (uint32_t *) settings, 1024);
+  sdk_spi_flash_read(START_ADDRESS, (uint32_t *) settings, 1024);
  
   char *location = find_key(key,settings);
   if(location == NULL) {
@@ -54,8 +59,8 @@ int flash_key_value_set(const char *key,const char *value) {
   strcpy(location+64,value);
   
 //   ETS_UART_INTR_DISABLE();
-  sdk_spi_flash_erase_sector(0x3C);
-  sdk_spi_flash_write(0x3C000,(uint32_t*)settings,1024);
+  sdk_spi_flash_erase_sector(START_SECTOR);
+  sdk_spi_flash_write(START_ADDRESS,(uint32_t*)settings,1024);
 //   ETS_UART_INTR_ENABLE();
  
   return 1;
@@ -67,7 +72,7 @@ int flash_key_value_get(char *key,char *value) {
  
   char settings[1024];
  
-  sdk_spi_flash_read(0x3C000, (uint32_t *) settings, 1024);
+  sdk_spi_flash_read(START_ADDRESS, (uint32_t *) settings, 1024);
  
   char *location = find_key(key,settings);
  

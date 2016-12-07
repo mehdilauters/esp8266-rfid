@@ -143,6 +143,7 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
   }
   
   if(reset) {
+    printf("RESET\n");    
     sdk_system_restart();
   }
   
@@ -226,5 +227,5 @@ void webserver_task(void *pvParameters) {
 
 void webserverInit() {
   printf("starting webserver\n");
-  xTaskCreate(webserver_task, (const char *)"webserver_task", 512, NULL, 3, NULL);//1024,866
+  xTaskCreate(webserver_task, (const char *)"webserver_task", 1024, NULL, 3, NULL);//1024,866
 }

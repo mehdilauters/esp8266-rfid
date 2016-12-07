@@ -20,7 +20,7 @@ static bool _is_connected;
 bool save_network(char * _essid, char *_password) {
   printf("saving essid=%s, password=%s to flash\n",_essid, _password);
   int res_ssid = flash_key_value_set("ssid",_essid);
-  int res_wpa = flash_key_value_set("wpa",_password);
+  int res_wpa = flash_key_value_set("pwd",_password);
   if(res_ssid == 0 || res_wpa == 0) {
     printf("Error saving to flash\n");
     flash_erase_all();
@@ -31,6 +31,7 @@ bool save_network(char * _essid, char *_password) {
 }
 
 bool load_network(struct sdk_station_config* _config) {
+  printf("LOADING\n");
   char buffer[128];
   int res = flash_key_value_get("ssid",buffer);
   if(res == 0) {
@@ -47,6 +48,7 @@ bool load_network(struct sdk_station_config* _config) {
   }
   
   strcpy((char*)_config->password, buffer);
+  printf("found %s\n", _config->ssid);
   return true;  
 }
 
@@ -132,15 +134,24 @@ bool is_connected() {
   return _is_connected;
 }
 
+void debug_task(void *pvParameters) {
+  while(1) {
+      printf(".\n");
+      vTaskDelay( 1000. );
+  }
+}
+
 
 //Init function 
 void user_init() {
+  xTaskCreate(debug_task, (const char *)"debug_task", 512, NULL, 3, NULL);//1024,866
   _is_connected = false;
   uart_set_baud(0, 115200);
   struct sdk_station_config config;
   if(load_network(&config)) {
     connect(&config);
   } else {
+    flash_erase_all();
     setup_ap();
   }
   

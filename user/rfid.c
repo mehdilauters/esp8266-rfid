@@ -56,10 +56,11 @@ bool send_tag() {
     bcopy(&hostAddr,&serverSockAddr.sin_addr,sizeof(hostAddr));
   else
   {
+    printf("====>%s\n",m_server);
     serverHostEnt = gethostbyname(m_server);
     if (serverHostEnt == NULL)
     {
-      printf("gethost fail\n");
+      perror("gethost fail\n");
       return false;
     }
     bcopy(serverHostEnt->h_addr,&serverSockAddr.sin_addr,serverHostEnt->h_length);
@@ -126,6 +127,7 @@ static void feed_task(void *pvParameters)
     
     int c = getchar();
     if(c != EOF) {
+      printf("=%c=\n",c);
       if(c == TAG_START) {
         m_reading = true;
         tag_init(&m_tag);
@@ -139,7 +141,20 @@ static void feed_task(void *pvParameters)
         }
       }
     }
+    process_button();
     
+    if(m_tag.valid) {
+      m_tag.valid = false;
+      tag_process();
+    }
+    
+  }
+}
+
+
+static void rfid_task(void *pvParameters)
+{
+  while(true) {
     process_button();
     
     if(m_tag.valid) {
@@ -153,9 +168,13 @@ static void feed_task(void *pvParameters)
 void rfid_start() {
   printf("RFID start\n");
   
+  m_tag.valid = false;
+  m_tag.current_index = 0;
+  
   memset(m_server, 0, 256);
   m_port = 0;
   load_server(m_server, &m_port);
   
-  xTaskCreate(feed_task, (const char *)"rfid_task", 128, NULL, 3, NULL);//1024,866
+  xTaskCreate(feed_task, (const char *)"feed_task", 512, NULL, 3, NULL);
+  xTaskCreate(rfid_task, (const char *)"rfid_task", 512, NULL, 3, NULL);
 }
