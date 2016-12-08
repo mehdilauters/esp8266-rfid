@@ -140,14 +140,7 @@ static void feed_task(void *pvParameters)
           tag_feed(&m_tag, c);
         }
       }
-    }
-    process_button();
-    
-    if(m_tag.valid) {
-      m_tag.valid = false;
-      tag_process();
-    }
-    
+    }    
   }
 }
 
@@ -161,7 +154,7 @@ static void rfid_task(void *pvParameters)
       m_tag.valid = false;
       tag_process();
     }
-    
+    vTaskDelay(500);
   }
 }
 
