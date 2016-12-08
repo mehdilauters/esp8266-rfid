@@ -124,10 +124,9 @@ static void feed_task(void *pvParameters)
 {
   while(true) {
     
-    
-    int c = getchar();
-    if(c != EOF) {
-      printf("=%c=\n",c);
+    vTaskDelay(1);
+    uint8_t c;
+    if(get_serial(&c)) {
       if(c == TAG_START) {
         m_reading = true;
         tag_init(&m_tag);

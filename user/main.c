@@ -14,8 +14,16 @@
 #include "webserver.h"
 #include "rfid.h"
 
+#include <unistd.h>
+
+#define T uint8_t
+#include "fifo.h"
+
+#define SERIAL_BUFFER_SIZE 64
 
 static bool _is_connected;
+fifo_t serial;
+uint8_t serial_buffer[SERIAL_BUFFER_SIZE];
 
 bool save_network(char * _essid, char *_password) {
   printf("saving essid=%s, password=%s to flash\n",_essid, _password);
@@ -134,19 +142,34 @@ bool is_connected() {
   return _is_connected;
 }
 
-void debug_task(void *pvParameters) {
+
+bool get_serial(uint8_t *_c) {
+  if(! fifo_isempty(&serial)) {
+    *_c = fifo_pop(&serial);
+    return true;
+  }
+  return false;
+}
+
+void serial_task(void *pvParameters) {
+  char c;
   while(1) {
-      printf(".\n");
-      vTaskDelay( 1000. );
+    if (read(0, (void*)&c, 1)) { // 0 is stdin
+      if(! fifo_isfull(&serial)) {
+        fifo_push(&serial, c);
+      }
+    }
   }
 }
 
 
 //Init function 
 void user_init() {
-  xTaskCreate(debug_task, (const char *)"debug_task", 512, NULL, 3, NULL);//1024,866
   _is_connected = false;
+  fifo_init(&serial, serial_buffer, SERIAL_BUFFER_SIZE);
+  
   uart_set_baud(0, 115200);
+  xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 3, NULL);//1024,866
   struct sdk_station_config config;
   if(load_network(&config)) {
     connect(&config);
@@ -155,10 +178,10 @@ void user_init() {
     setup_ap();
   }
   
-  webserverInit();
-  rfid_start();
-  
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
   
+  
+  webserverInit();
+  rfid_start();
 }
