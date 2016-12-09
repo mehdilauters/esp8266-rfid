@@ -25,6 +25,21 @@ int path_length = 0;
 const char * data_start = NULL;
 int data_length = 0;
 
+char* replace(char* str, char* a, char* b)
+{
+  int len  = strlen(str);
+  int lena = strlen(a), lenb = strlen(b);
+  char *p;
+  for (p = str; p = strstr(p, a); ++p) {
+    if (lena != lenb) // shift end as needed
+      memmove(p+lenb, p+lena,
+              len - (p - str) + lenb);
+      memcpy(p, b, lenb);
+    p+=strlen(b);
+  }
+  return str;
+}
+
 int create_and_bind() {
   int yes=1;
   struct sockaddr_in my_addr;
@@ -203,9 +218,32 @@ void handle(int _sockfd) {
     /* Handle error. Usually just close the connection. */
   }
  
+  int size = strlen(page_content)+128;
+  char buffer[size];
+  memset(buffer,0,size);
+  sprintf(buffer, "%s", page_content);
   
+  struct sdk_station_config config;
+  if(load_network(&config)) {
+    replace(buffer, "ESSID", (char*)config.ssid);
+  } else {
+    replace(buffer, "ESSID", "NONE");
+  }
   
-  write(_sockfd, page_content, strlen(page_content));
+  char server[256];
+  int port = 0;
+  if(load_server(server, &port)) {
+    
+    replace(buffer, "SERVER", server);
+    char tmp[5];
+    sprintf(tmp, "%d", port);
+    replace(buffer, "PORT", tmp);
+  } else {
+    replace(buffer, "SERVER", "0.0.0.0");
+    replace(buffer, "PORT", "-1");
+  }
+  
+  write(_sockfd, buffer, strlen(buffer));
   close(_sockfd);
 }
 

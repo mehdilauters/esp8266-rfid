@@ -13,6 +13,7 @@
 #include "captdns.h"
 #include "webserver.h"
 #include "rfid.h"
+#include "ota.h"
 
 #include <unistd.h>
 
@@ -163,6 +164,7 @@ void serial_task(void *pvParameters) {
 }
 
 
+
 //Init function 
 void user_init() {
   _is_connected = false;
@@ -181,7 +183,7 @@ void user_init() {
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
   
-  
+  ota_start();
   webserverInit();
   rfid_start();
 }
