@@ -82,9 +82,20 @@ void start_client() {
 
 void otacheck_task(void *pvParameters) {
   while(1) {
+    printf("=============%s\n",__TIME__);
     printf("Ota check");
     
     if(is_connected()) {
+      
+      rboot_config conf = rboot_get_config();
+      printf("\r\n\r\nOTA Basic demo.\r\nCurrently running on flash slot %d / %d.\r\n\r\n",
+             conf.current_rom, conf.count);
+      
+      printf("Image addresses in flash:\r\n");
+      for(int i = 0; i <conf.count; i++) {
+        printf("%c%d: offset 0x%08x\r\n", i == conf.current_rom ? '*':' ', i, conf.roms[i]);
+      }
+      
       start_client();
     }
     vTaskDelay(1000);
@@ -95,13 +106,4 @@ void otacheck_task(void *pvParameters) {
 
 void ota_start() {
   xTaskCreate(otacheck_task, (const char *)"otacheck_task", 512, NULL, 2, NULL);//1024,866
-  
-  rboot_config conf = rboot_get_config();
-  printf("\r\n\r\nOTA Basic demo.\r\nCurrently running on flash slot %d / %d.\r\n\r\n",
-         conf.current_rom, conf.count);
-  
-  printf("Image addresses in flash:\r\n");
-  for(int i = 0; i <conf.count; i++) {
-    printf("%c%d: offset 0x%08x\r\n", i == conf.current_rom ? '*':' ', i, conf.roms[i]);
-  }
 }

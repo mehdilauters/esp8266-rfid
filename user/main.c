@@ -1,3 +1,7 @@
+#include "rboot-api.h"
+
+
+
 #include "config.h"
 #include "espressif/esp_common.h"
 #include "esp/gpio.h"
@@ -158,6 +162,28 @@ void serial_task(void *pvParameters) {
     if (read(0, (void*)&c, 1)) { // 0 is stdin
       if(! fifo_isfull(&serial)) {
         fifo_push(&serial, c);
+        switch(c) {
+          case '0':
+          {
+            printf("reboot to 0\n");
+            rboot_config conf = rboot_get_config();
+            conf.current_rom = 0;
+            rboot_set_config(&conf);
+            sdk_system_restart();
+            break;
+          }
+          case '1':
+          {
+            printf("reboot to 1\n");
+            rboot_config conf = rboot_get_config();
+            conf.current_rom = 1;
+            rboot_set_config(&conf);
+            sdk_system_restart();
+            break;
+          }
+          default:
+            printf("unknown\n");
+        }
       }
     }
   }
