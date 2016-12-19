@@ -118,8 +118,6 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
   
   printf(format,data_start);
   
-  
-  
   // really really basic security check
   bool check = false;
   uint32_t id = sdk_system_get_chip_id();
@@ -157,6 +155,18 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
     }
   }
   
+  char upg[256];
+  memset(upg, 0, 256);
+  bool res = http_get_post_value(data_start, "upgrade", upg);
+  if(res && strcmp(upg, "upgrade") == 0) {
+    struct sockaddr_in addr;
+    socklen_t addr_size = sizeof(struct sockaddr_in);
+    int res = getpeername(_parser->data, (struct sockaddr *)&addr, &addr_size);
+    const char * ip = inet_ntoa(addr.sin_addr);
+    printf("fetching upg from %s\n", ip);
+    ota_start(ip);
+  }
+  
   if(reset) {
     printf("RESET\n");    
     sdk_system_restart();
@@ -166,8 +176,7 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
 }
 
 char buffer[1024];
-void handle(int _sockfd) {
-  
+void handle(int _sockfd, struct sockaddr_in *_addr) {
   path_start = NULL;
   path_length = 0;
   
@@ -204,7 +213,7 @@ void handle(int _sockfd) {
   
   http_parser *parser = malloc(sizeof(http_parser));
   http_parser_init(parser, HTTP_REQUEST);
-  parser->data = &_sockfd;
+  parser->data = _sockfd;
   
   
   /* Start up / continue the parser.
@@ -259,7 +268,7 @@ void webserver_task(void *pvParameters) {
       perror("accept");
       return;
     }
-    handle(new_fd);
+    handle(new_fd, &their_addr);
   }
 }
 

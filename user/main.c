@@ -199,6 +199,7 @@ static void wifi_task(void *pvParameters) {
       while ((status != STATION_GOT_IP) && (retries)) {
         status = sdk_wifi_station_get_connect_status();
         printf("%s: status = %d\n\r", __func__, status);
+        --retries;
         if (status == STATION_WRONG_PASSWORD) {
           printf("WiFi: wrong password\n\r");
           break;
@@ -210,7 +211,6 @@ static void wifi_task(void *pvParameters) {
           break;
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        --retries;
       }
       
       if(retries == 0) {
@@ -252,8 +252,6 @@ void user_init() {
   
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
-  
-  ota_start();
   rfid_start();
   webserverInit();
 }

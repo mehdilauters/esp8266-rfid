@@ -14,13 +14,16 @@
 
 /* Output of the command 'sha256sum firmware1.bin' */
 static const char *FIRMWARE1_SHA256 = "";
+#define TFTP_PORT 69
+
+static char * m_ip;
 
 static void tftpclient_download_and_verify(int slot, rboot_config *conf)
 {
   char filename[256];
   sprintf(filename, "%s%d.bin", TFTP_IMAGE_FILENAME_BASE,slot);
   printf("Downloading %s to slot %d...\n", filename, slot);
-  int res = ota_tftp_download(TFTP_IMAGE_SERVER, TFTP_PORT, filename, 1000, slot, NULL);
+  int res = ota_tftp_download(m_ip, TFTP_PORT, filename, 1000, slot, NULL);
   printf("ota_tftp_download %s result %d\n", filename, res);
   
   if (res != 0) {
@@ -84,26 +87,23 @@ void otacheck_task(void *pvParameters) {
   while(1) {
     printf("=============%s\n",__TIME__);
     printf("Ota check");
+          
+    rboot_config conf = rboot_get_config();
+    printf("\r\n\r\nOTA Basic demo.\r\nCurrently running on flash slot %d / %d.\r\n\r\n",
+            conf.current_rom, conf.count);
     
-    if(is_connected()) {
-      
-      rboot_config conf = rboot_get_config();
-      printf("\r\n\r\nOTA Basic demo.\r\nCurrently running on flash slot %d / %d.\r\n\r\n",
-             conf.current_rom, conf.count);
-      
-      printf("Image addresses in flash:\r\n");
-      for(int i = 0; i <conf.count; i++) {
-        printf("%c%d: offset 0x%08x\r\n", i == conf.current_rom ? '*':' ', i, conf.roms[i]);
-      }
-      
-      start_client();
+    printf("Image addresses in flash:\r\n");
+    for(int i = 0; i <conf.count; i++) {
+      printf("%c%d: offset 0x%08x\r\n", i == conf.current_rom ? '*':' ', i, conf.roms[i]);
     }
-    vTaskDelay(1000);
     
+    start_client();
   }
+  vTaskDelay(1000);
 }
 
 
-void ota_start() {
+void ota_start(char * _ip) {
+  m_ip = _ip;
   xTaskCreate(otacheck_task, (const char *)"otacheck_task", 512, NULL, 2, NULL);//1024,866
 }
