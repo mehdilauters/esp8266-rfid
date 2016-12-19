@@ -29,6 +29,7 @@
 static bool _is_connected;
 fifo_t serial;
 uint8_t serial_buffer[SERIAL_BUFFER_SIZE];
+struct sdk_station_config wifi_config;
 
 bool save_network(char * _essid, char *_password) {
   printf("saving essid=%s, password=%s to flash\n",_essid, _password);
@@ -110,9 +111,9 @@ bool get_button_pressed() {
 
 void connect(struct sdk_station_config* _config) {
   printf("connecting to %s\n",_config->ssid);
+  printf("     %s\n",_config->password);
   sdk_wifi_set_opmode(STATION_MODE);
   sdk_wifi_station_set_config(_config);
-  _is_connected = true;
 }
 
 void setup_ap() {
@@ -189,7 +190,50 @@ void serial_task(void *pvParameters) {
   }
 }
 
-
+static void wifi_task(void *pvParameters) {
+  uint8_t status = 0;
+  uint8_t retries = 30;
+    while (1) {
+      _is_connected = false;
+      
+      while ((status != STATION_GOT_IP) && (retries)) {
+        status = sdk_wifi_station_get_connect_status();
+        printf("%s: status = %d\n\r", __func__, status);
+        if (status == STATION_WRONG_PASSWORD) {
+          printf("WiFi: wrong password\n\r");
+          break;
+        } else if (status == STATION_NO_AP_FOUND) {
+          printf("WiFi: AP not found\n\r");
+          break;
+        } else if (status == STATION_CONNECT_FAIL) {
+          printf("WiFi: connection failed\r\n");
+          break;
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        --retries;
+      }
+      
+      if(retries == 0) {
+        setup_ap();
+        while(true) {
+          vTaskDelay(1000 / portTICK_PERIOD_MS); 
+        }
+      }
+      
+      while ((status = sdk_wifi_station_get_connect_status())
+        == STATION_GOT_IP) {
+        if ( ! _is_connected ) {
+          printf("WiFi: Connected\n\r");
+          _is_connected = true;
+        }
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
+        
+        _is_connected = false;
+      printf("WiFi: disconnected\n\r");
+      vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
 
 //Init function 
 void user_init() {
@@ -198,9 +242,9 @@ void user_init() {
   
   uart_set_baud(0, 115200);
   xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 3, NULL);//1024,866
-  struct sdk_station_config config;
-  if(load_network(&config)) {
-    connect(&config);
+  if( load_network(&wifi_config)) {
+    connect(&wifi_config);
+    xTaskCreate(wifi_task, (const char *)"wifi_task", 512, NULL, 3, NULL);//1024,866
   } else {
     flash_erase_all();
     setup_ap();
@@ -210,6 +254,6 @@ void user_init() {
   printf("#%d\n", id);
   
   ota_start();
-  webserverInit();
   rfid_start();
+  webserverInit();
 }
