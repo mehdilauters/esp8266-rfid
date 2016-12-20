@@ -11,4 +11,7 @@
 // should be firmwar_1.bin on the server
 #define TFTP_IMAGE_FILENAME_BASE "firmware_"
 
+#define GREEN_LED_PIN 04
+#define RED_LED_PIN 05
+#define NEXT_PUSH_PIN 15
 #endif

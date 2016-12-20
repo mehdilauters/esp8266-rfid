@@ -235,6 +235,14 @@ static void wifi_task(void *pvParameters) {
     }
 }
 
+static void test_task(void *pvParameters) {
+  while(true) {
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    bool val = gpio_read(NEXT_PUSH_PIN);
+    printf("==>%d\n",val);
+  }
+}
+
 //Init function 
 void user_init() {
   _is_connected = false;
@@ -250,8 +258,18 @@ void user_init() {
     setup_ap();
   }
   
+  xTaskCreate(test_task, (const char *)"test_task", 512, NULL, 3, NULL);//1024,866
+  
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
   rfid_start();
   webserverInit();
+  
+  gpio_enable(NEXT_PUSH_PIN, GPIO_INPUT);
+  
+  gpio_enable(GREEN_LED_PIN, GPIO_OUTPUT);
+  gpio_write(GREEN_LED_PIN, 1);
+  
+  gpio_enable(RED_LED_PIN, GPIO_OUTPUT);
+  gpio_write(RED_LED_PIN, 1);
 }
