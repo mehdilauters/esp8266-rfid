@@ -309,8 +309,8 @@ void user_init() {
   
   gpio_enable(gpio, GPIO_INPUT);
   
-  gpio_enable(13, GPIO_OUTPUT);
-  gpio_write(13, 1);
+//   gpio_enable(13, GPIO_OUTPUT);
+//   gpio_write(13, 1);
   
 //   gpio_enable(14, GPIO_INPUT);
 //   gpio_write(14, 1);

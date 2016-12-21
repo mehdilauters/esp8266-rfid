@@ -1,8 +1,8 @@
 #include "webserver.h" 
-
+#include "ota.h"
 
 #include "espressif/esp_common.h"
-
+#include "config.h"
 #include <string.h>
 
 #include "FreeRTOS.h"
@@ -30,7 +30,7 @@ char* replace(char* str, char* a, char* b)
   int len  = strlen(str);
   int lena = strlen(a), lenb = strlen(b);
   char *p;
-  for (p = str; p = strstr(p, a); ++p) {
+  for (p = str; (p = strstr(p, a)); ++p) {
     if (lena != lenb) // shift end as needed
       memmove(p+lenb, p+lena,
               len - (p - str) + lenb);
@@ -131,7 +131,6 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
   if(! check) {
     return 0;
   }
-  
   bool reset = false;
   char essid[33];
   char password[128];
@@ -162,10 +161,13 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
   if(res && strcmp(upg, "upgrade") == 0) {
     struct sockaddr_in addr;
     socklen_t addr_size = sizeof(struct sockaddr_in);
-    int res = getpeername(_parser->data, (struct sockaddr *)&addr, &addr_size);
-    const char * ip = inet_ntoa(addr.sin_addr);
-    printf("fetching upg from %s\n", ip);
-    ota_start(ip);
+    if(getpeername(*((int*)_parser->data), (struct sockaddr *)&addr, &addr_size) == 0 ) {
+      const char * ip = inet_ntoa(addr.sin_addr);
+      printf("fetching upg from %s\n", ip);
+      ota_start(ip);
+    } else {
+      printf("Could not get client ip\n");
+    }
   }
   
   if(reset) {
@@ -188,7 +190,7 @@ void handle(int _sockfd, struct sockaddr_in *_addr) {
   memset(buffer, 0, 1024);
   int recved = read(_sockfd, buffer, 3000);
   if (recved < 0 ) {
-    perror("recive");
+    printf(" read error\n");
     return;
   }
   printf("received %d\n%s\n",recved,buffer);
@@ -214,7 +216,7 @@ void handle(int _sockfd, struct sockaddr_in *_addr) {
   
   http_parser *parser = malloc(sizeof(http_parser));
   http_parser_init(parser, HTTP_REQUEST);
-  parser->data = _sockfd;
+  parser->data = &_sockfd;
   
   
   /* Start up / continue the parser.
@@ -232,6 +234,8 @@ void handle(int _sockfd, struct sockaddr_in *_addr) {
   char buffer[size];
   memset(buffer,0,size);
   sprintf(buffer, "%s", page_content);
+  
+  replace(buffer, "DATE_BUILD", BUILD_DATE);
   
   struct sdk_station_config config;
   if(load_network(&config)) {
