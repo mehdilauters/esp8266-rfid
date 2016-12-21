@@ -238,10 +238,44 @@ static void wifi_task(void *pvParameters) {
 static void test_task(void *pvParameters) {
   while(true) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    bool val = gpio_read(NEXT_PUSH_PIN);
-    printf("==>%d\n",val);
+    bool next = gpio_read(NEXT_PUSH_PIN);
+    bool playpause = gpio_read(PLAYPAUSE_PUSH_PIN);
+    printf("next %d  play_pause %d\n",next, playpause);
+    
   }
 }
+
+const gpio_inttype_t int_type = GPIO_INTTYPE_EDGE_ANY;
+int gpio = 12;
+
+static QueueHandle_t tsqueue;
+
+void gpio_intr_handler(uint8_t gpio_num)
+{
+  uint32_t now = xTaskGetTickCountFromISR();
+  xQueueSendToBackFromISR(tsqueue, &now, NULL);
+}
+
+void buttonIntTask(void *pvParameters)
+{
+  printf("Waiting for button press interrupt on gpio %d...\r\n", gpio);
+  QueueHandle_t *tsqueue = (QueueHandle_t *)pvParameters;
+  gpio_set_interrupt(gpio, int_type, gpio_intr_handler);
+  
+  uint32_t last = 0;
+  while(1) {
+    uint32_t button_ts;
+    xQueueReceive(*tsqueue, &button_ts, portMAX_DELAY);
+    button_ts *= portTICK_PERIOD_MS;
+    if(last < button_ts-200) {
+      printf("Button interrupt fired at %dms\r\n", button_ts);
+      last = button_ts;
+    }
+  }
+}
+
+
+
 
 //Init function 
 void user_init() {
@@ -272,4 +306,15 @@ void user_init() {
   
   gpio_enable(RED_LED_PIN, GPIO_OUTPUT);
   gpio_write(RED_LED_PIN, 1);
+  
+  gpio_enable(gpio, GPIO_INPUT);
+  
+  gpio_enable(13, GPIO_OUTPUT);
+  gpio_write(13, 1);
+  
+//   gpio_enable(14, GPIO_INPUT);
+//   gpio_write(14, 1);
+  
+  tsqueue = xQueueCreate(2, sizeof(uint32_t));
+  xTaskCreate(buttonIntTask, "buttonIntTask", 256, &tsqueue, 2, NULL);
 }

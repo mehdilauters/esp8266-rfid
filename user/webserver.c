@@ -128,36 +128,37 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
       check = true;
     }
   }
+  if(! check) {
+    return 0;
+  }
   
   bool reset = false;
-  if(check) {
-    char essid[33];
-    char password[128];
-    
-    bool res = http_get_post_value(data_start, "essid", essid);
-    res &= http_get_post_value(data_start, "password", password);
-    
-    
-    if(res && essid[0] != '\0' && password[0] != '\0') {
-      reset = save_network(essid, password);
-    }
-    
-    char server[128];
-    char port[5];
-    
-    res = http_get_post_value(data_start, "server", server);
-    res &= http_get_post_value(data_start, "port", port);
-    
-    if(res && server[0] != '\0' && port[0] != '\0') {
-      int port_number = strtol(port, NULL, 10);
-      save_server(server, port_number);
-      reset = true;
-    }
+  char essid[33];
+  char password[128];
+  
+  bool res = http_get_post_value(data_start, "essid", essid);
+  res &= http_get_post_value(data_start, "password", password);
+  
+  
+  if(res && essid[0] != '\0' && password[0] != '\0') {
+    reset = save_network(essid, password);
+  }
+  
+  char server[128];
+  char port[5];
+  
+  res = http_get_post_value(data_start, "server", server);
+  res &= http_get_post_value(data_start, "port", port);
+  
+  if(res && server[0] != '\0' && port[0] != '\0') {
+    int port_number = strtol(port, NULL, 10);
+    save_server(server, port_number);
+    reset = true;
   }
   
   char upg[256];
   memset(upg, 0, 256);
-  bool res = http_get_post_value(data_start, "upgrade", upg);
+  res = http_get_post_value(data_start, "upgrade", upg);
   if(res && strcmp(upg, "upgrade") == 0) {
     struct sockaddr_in addr;
     socklen_t addr_size = sizeof(struct sockaddr_in);

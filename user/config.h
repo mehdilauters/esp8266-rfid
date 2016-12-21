@@ -14,4 +14,5 @@
 #define GREEN_LED_PIN 04
 #define RED_LED_PIN 05
 #define NEXT_PUSH_PIN 15
+#define PLAYPAUSE_PUSH_PIN 2
 #endif
