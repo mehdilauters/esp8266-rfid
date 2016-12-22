@@ -163,6 +163,7 @@ void serial_task(void *pvParameters) {
     if (read(0, (void*)&c, 1)) { // 0 is stdin
       if(! fifo_isfull(&serial)) {
         fifo_push(&serial, c);
+        printf("%c\n",c);
         switch(c) {
           case '0':
           {

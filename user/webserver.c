@@ -18,6 +18,7 @@
 #include "main.h"
 
 #define BACKLOG 10
+#define MAX_POST_REQUEST_SIZE 2048
 
 const char * path_start = NULL;
 int path_length = 0;
@@ -116,7 +117,7 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
   memset(format, 0, 10);
   sprintf(format, "%%.%ds\n", length);
   
-  printf(format,data_start);
+//   printf(format,data_start);
   
   // really really basic security check
   bool check = false;
@@ -154,7 +155,6 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
     save_server(server, port_number);
     reset = true;
   }
-  
   char upg[256];
   memset(upg, 0, 256);
   res = http_get_post_value(data_start, "upgrade", upg);
@@ -178,7 +178,7 @@ int my_body_callback (http_parser* _parser, const char *at, size_t length) {
   return 0;
 }
 
-char buffer[1024];
+char buffer[MAX_POST_REQUEST_SIZE];
 void handle(int _sockfd, struct sockaddr_in *_addr) {
   path_start = NULL;
   path_length = 0;
@@ -187,8 +187,8 @@ void handle(int _sockfd, struct sockaddr_in *_addr) {
   data_length = 0;
   
   printf ("handle\n");
-  memset(buffer, 0, 1024);
-  int recved = read(_sockfd, buffer, 3000);
+  memset(buffer, 0, MAX_POST_REQUEST_SIZE);
+  int recved = read(_sockfd, buffer, MAX_POST_REQUEST_SIZE);
   if (recved < 0 ) {
     printf(" read error\n");
     return;

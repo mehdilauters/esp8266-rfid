@@ -97,12 +97,12 @@ void otacheck_task(void *pvParameters) {
     }
     
     start_client();
+    vTaskDelay(1000);
   }
-  vTaskDelay(1000);
 }
 
 
-void ota_start(char * _ip) {
+void ota_start(const char * _ip) {
   m_ip = _ip;
   xTaskCreate(otacheck_task, (const char *)"otacheck_task", 512, NULL, 2, NULL);//1024,866
 }
