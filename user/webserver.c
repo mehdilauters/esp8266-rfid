@@ -236,6 +236,10 @@ void handle(int _sockfd, struct sockaddr_in *_addr) {
   sprintf(buffer, "%s", page_content);
   
   replace(buffer, "DATE_BUILD", BUILD_DATE);
+  uint32_t id = sdk_system_get_chip_id();
+  char id_buff[10];
+  sprintf(id_buff, "%d", id);
+  replace(buffer, "SERIAL", id_buff);
   
   struct sdk_station_config config;
   if(load_network(&config)) {

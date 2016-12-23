@@ -236,12 +236,27 @@ static void wifi_task(void *pvParameters) {
 }
 
 static void test_task(void *pvParameters) {
+  uint32_t next_ts = 0;
   while(true) {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
     bool next = gpio_read(NEXT_PUSH_PIN);
+    if(next) {
+      if(next_ts != 0) {
+        next_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
+      }
+      if(xTaskGetTickCount()*portTICK_PERIOD_MS - next_ts > 3000) {
+        printf("Pressed for 3 secs");
+//         flash_erase_all();
+        next_ts = 0;
+      }
+      
+    }
+    
+    
+    
+    
     bool playpause = gpio_read(PLAYPAUSE_PUSH_PIN);
     printf("next %d  play_pause %d\n",next, playpause);
-    
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -271,6 +286,7 @@ void buttonIntTask(void *pvParameters)
       printf("Button interrupt fired at %dms\r\n", button_ts);
       last = button_ts;
     }
+    vTaskDelay(1 / portTICK_PERIOD_MS);
   }
 }
 
@@ -282,7 +298,7 @@ void user_init() {
   _is_connected = false;
   fifo_init(&serial, serial_buffer, SERIAL_BUFFER_SIZE);
   
-  uart_set_baud(0, 115200);
+  uart_set_baud(0, 9600);
   xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 3, NULL);//1024,866
   if( load_network(&wifi_config)) {
     connect(&wifi_config);

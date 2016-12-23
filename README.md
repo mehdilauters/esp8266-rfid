@@ -14,3 +14,5 @@ client connected:waiting for a connection
 tag 7800F011A6 received
 tag 7800F8CC97 received
 ````
+
+To enable the webui, please run ````bower install first````

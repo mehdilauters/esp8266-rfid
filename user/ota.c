@@ -20,8 +20,7 @@ static char * m_ip;
 
 static void tftpclient_download_and_verify(int slot, rboot_config *conf)
 {
-  char filename[256];
-  sprintf(filename, "%s%d.bin", TFTP_IMAGE_FILENAME_BASE,slot);
+  char * filename = TFTP_IMAGE_FILENAME;
   printf("Downloading %s to slot %d...\n", filename, slot);
   int res = ota_tftp_download(m_ip, TFTP_PORT, filename, 1000, slot, NULL);
   printf("ota_tftp_download %s result %d\n", filename, res);
