@@ -249,6 +249,7 @@ void handle(int _sockfd, struct sockaddr_in *_addr) {
   }
   
   char server[256];
+  memset(server, 0, 256);
   int port = 0;
   if(load_server(server, &port)) {
     

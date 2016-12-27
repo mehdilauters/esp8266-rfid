@@ -14,6 +14,8 @@
 #define TAG_START 0x02
 #define TAG_STOP 0x03
 
+#define HTTPS_REQUEST "GET /tag.json?serial=%d&tagid=%s HTTP/1.1\nHost: %s\n\n"
+
 tag_t m_tag;
 
 bool m_reading = false;
@@ -56,7 +58,6 @@ bool send_tag() {
     bcopy(&hostAddr,&serverSockAddr.sin_addr,sizeof(hostAddr));
   else
   {
-    printf("====>%s\n",m_server);
     serverHostEnt = gethostbyname(m_server);
     if (serverHostEnt == NULL)
     {
@@ -80,8 +81,19 @@ bool send_tag() {
   return false;
   }
   
+#ifdef RAW_TCP
   write(sockfd, m_tag.id, TAG_ID_LENGTH);
-  
+#else
+  char buf[TAG_ID_LENGTH +1];
+  memset(buf, 0, TAG_ID_LENGTH);
+  for(int i=0; i < TAG_ID_LENGTH; i++) {
+    buf[i] = m_tag.id[i];
+  }
+  char buffer[strlen(HTTPS_REQUEST) + 128];
+  uint32_t id = sdk_system_get_chip_id();
+  int res = sprintf(buffer, HTTPS_REQUEST, id, buf, m_server);
+  write(sockfd, buffer, res);
+#endif
   shutdown(sockfd,2);
   close(sockfd);
   return true;

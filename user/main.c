@@ -88,7 +88,6 @@ bool save_server(char * _server, int _port) {
 }
 
 bool load_server(char * _server, int *_port) {
-  
   int res_server = flash_key_value_get("server",_server);
   
   char buffer[5];
@@ -238,15 +237,32 @@ static void wifi_task(void *pvParameters) {
 
 static void test_task(void *pvParameters) {
   uint32_t next_ts = 0;
+  uint32_t program_ts = 0;
   while(true) {
     bool next = gpio_read(NEXT_PUSH_PIN);
+    bool program = gpio_read(PROGRAM_PUSH_PIN);
+    
+    // program bytton has a pull up
+    if(!program) {
+      if(program_ts == 0) {
+        program_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
+      }
+      
+      if(xTaskGetTickCount()*portTICK_PERIOD_MS - program_ts > 3000) {
+        printf("RESET\n"); 
+        program_ts = 0;
+        flash_erase_all();
+      }
+    } else {
+      program_ts = 0;
+    }
+    
     if(next) {
-      if(next_ts != 0) {
+      if(next_ts == 0) {
         next_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
       }
       if(xTaskGetTickCount()*portTICK_PERIOD_MS - next_ts > 3000) {
         printf("Pressed for 3 secs");
-//         flash_erase_all();
         next_ts = 0;
       }
       
@@ -256,7 +272,7 @@ static void test_task(void *pvParameters) {
     
     
     bool playpause = gpio_read(PLAYPAUSE_PUSH_PIN);
-    printf("next %d  play_pause %d\n",next, playpause);
+    printf("program %d next %d  play_pause %d\n",program, next, playpause);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
@@ -317,6 +333,7 @@ void user_init() {
   webserverInit();
   
   gpio_enable(NEXT_PUSH_PIN, GPIO_INPUT);
+  gpio_enable(PROGRAM_PUSH_PIN, GPIO_INPUT);
   
   gpio_enable(GREEN_LED_PIN, GPIO_OUTPUT);
   gpio_write(GREEN_LED_PIN, 1);

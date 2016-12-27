@@ -1338,41 +1338,6 @@ Standard 3-pin 0.1" header. Use with straight break away headers (SKU : PRT-0011
 </deviceset>
 </devicesets>
 </library>
-<library name="supply2">
-<description>&lt;b&gt;Supply Symbols&lt;/b&gt;&lt;p&gt;
-GND, VCC, 0V, +5V, -5V, etc.&lt;p&gt;
-Please keep in mind, that these devices are necessary for the
-automatic wiring of the supply signals.&lt;p&gt;
-The pin name defined in the symbol is identical to the net which is to be wired automatically.&lt;p&gt;
-In this library the device names are the same as the pin names of the symbols, therefore the correct signal names appear next to the supply symbols in the schematic.&lt;p&gt;
-&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
-<packages>
-</packages>
-<symbols>
-<symbol name="+05V">
-<wire x1="-0.635" y1="1.27" x2="0.635" y2="1.27" width="0.1524" layer="94"/>
-<wire x1="0" y1="0.635" x2="0" y2="1.905" width="0.1524" layer="94"/>
-<circle x="0" y="1.27" radius="1.27" width="0.254" layer="94"/>
-<text x="-1.905" y="3.175" size="1.778" layer="96">&gt;VALUE</text>
-<pin name="+5V" x="0" y="-2.54" visible="off" length="short" direction="sup" rot="R90"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="+5V" prefix="SUPPLY">
-<description>&lt;b&gt;SUPPLY SYMBOL&lt;/b&gt;</description>
-<gates>
-<gate name="+5V" symbol="+05V" x="0" y="0"/>
-</gates>
-<devices>
-<device name="">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="rcl">
 <description>&lt;b&gt;Resistors, Capacitors, Inductors&lt;/b&gt;&lt;p&gt;
 Based on the previous libraries:
@@ -5390,14 +5355,12 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <part name="R1" library="rcl" deviceset="R-EU_" device="R0603" value="100"/>
 <part name="R2" library="rcl" deviceset="R-EU_" device="R0603" value="100"/>
 <part name="GND3" library="supply1" deviceset="GND" device=""/>
-<part name="SUPPLY2" library="supply2" deviceset="+5V" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
 <part name="RED_LED" library="wirepad" deviceset="WIREPAD" device="SMD1,27-254" value="WIREPADSMD1,27-254"/>
 <part name="GREEN_LED" library="wirepad" deviceset="WIREPAD" device="SMD1,27-254" value="WIREPADSMD1,27-254"/>
 <part name="NEXT_BUTTON" library="wirepad" deviceset="WIREPAD" device="SMD1,27-254" value="WIREPADSMD1,27-254"/>
 <part name="PAUSE_BUTTON" library="wirepad" deviceset="WIREPAD" device="SMD1,27-254" value="WIREPADSMD1,27-254"/>
 <part name="3.3V" library="wirepad" deviceset="WIREPAD" device="SMD1,27-254" value="WIREPADSMD1,27-254"/>
-<part name="SUPPLY3" library="supply2" deviceset="+5V" device=""/>
 <part name="GND5" library="supply1" deviceset="GND" device=""/>
 <part name="GND" library="wirepad" deviceset="WIREPAD" device="SMD1,27-254" value="WIREPADSMD1,27-254"/>
 <part name="GND2" library="supply1" deviceset="GND" device=""/>
@@ -5424,14 +5387,12 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <instance part="R1" gate="G$1" x="27.94" y="71.12" rot="R90"/>
 <instance part="R2" gate="G$1" x="35.56" y="68.58" rot="R90"/>
 <instance part="GND3" gate="1" x="-149.86" y="50.8" rot="R180"/>
-<instance part="SUPPLY2" gate="+5V" x="-109.22" y="53.34" rot="R270"/>
 <instance part="GND4" gate="1" x="60.96" y="58.42" rot="R90"/>
 <instance part="RED_LED" gate="G$1" x="27.94" y="91.44" rot="R270"/>
 <instance part="GREEN_LED" gate="G$1" x="35.56" y="91.44" rot="R270"/>
 <instance part="NEXT_BUTTON" gate="G$1" x="25.4" y="30.48" rot="R90"/>
 <instance part="PAUSE_BUTTON" gate="G$1" x="35.56" y="30.48" rot="R90"/>
 <instance part="3.3V" gate="G$1" x="-15.24" y="27.94" rot="R90"/>
-<instance part="SUPPLY3" gate="+5V" x="-154.94" y="45.72" rot="R90"/>
 <instance part="GND5" gate="1" x="-109.22" y="40.64" rot="R90"/>
 <instance part="GND" gate="G$1" x="15.24" y="30.48" rot="R90"/>
 <instance part="GND2" gate="1" x="10.16" y="48.26" rot="R270"/>
@@ -5504,18 +5465,6 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <pinref part="U$2" gate="G$1" pin="P$3"/>
 <pinref part="GND4" gate="1" pin="GND"/>
 <wire x1="55.88" y1="58.42" x2="58.42" y2="58.42" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="+5V" class="0">
-<segment>
-<pinref part="U$1" gate="G$1" pin="5V"/>
-<pinref part="SUPPLY2" gate="+5V" pin="+5V"/>
-<wire x1="-116.84" y1="53.34" x2="-111.76" y2="53.34" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="U$1" gate="G$1" pin="RES"/>
-<pinref part="SUPPLY3" gate="+5V" pin="+5V"/>
-<wire x1="-147.32" y1="45.72" x2="-152.4" y2="45.72" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$7" class="0">
@@ -5646,13 +5595,6 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <wire x1="10.16" y1="60.96" x2="40.64" y2="60.96" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$3" class="0">
-<segment>
-<pinref part="J1" gate="G$1" pin="VBUS"/>
-<pinref part="T1" gate="A" pin="VIN"/>
-<wire x1="-154.94" y1="83.82" x2="-121.92" y2="83.82" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="N$8" class="0">
 <segment>
 <pinref part="U1" gate="G$1" pin="VCC"/>
@@ -5680,6 +5622,21 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <pinref part="U$1" gate="G$1" pin="D0"/>
 <wire x1="-116.84" y1="45.72" x2="-109.22" y2="45.72" width="0.1524" layer="91"/>
 <label x="-109.22" y="45.72" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="VBUS" class="0">
+<segment>
+<pinref part="U$1" gate="G$1" pin="RES"/>
+<wire x1="-147.32" y1="45.72" x2="-152.4" y2="45.72" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="J1" gate="G$1" pin="VBUS"/>
+<pinref part="T1" gate="A" pin="VIN"/>
+<wire x1="-154.94" y1="83.82" x2="-121.92" y2="83.82" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$1" gate="G$1" pin="5V"/>
+<wire x1="-116.84" y1="53.34" x2="-111.76" y2="53.34" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
