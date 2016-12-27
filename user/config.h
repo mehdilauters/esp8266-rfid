@@ -12,6 +12,10 @@
 #define PLAYPAUSE_PUSH_PIN 2
 #define PROGRAM_PUSH_PIN 0
 
+#define ROTARY_A 14
+#define ROTARY_B 12
+#define ROTARY_C 13
+
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
 #endif

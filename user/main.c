@@ -18,6 +18,7 @@
 #include "webserver.h"
 #include "rfid.h"
 #include "ota.h"
+#include "rotary.h"
 
 #include <unistd.h>
 
@@ -238,22 +239,26 @@ static void wifi_task(void *pvParameters) {
 static void test_task(void *pvParameters) {
   uint32_t next_ts = 0;
   uint32_t program_ts = 0;
+  bool program_enabled = false;
   while(true) {
     bool next = gpio_read(NEXT_PUSH_PIN);
     bool program = gpio_read(PROGRAM_PUSH_PIN);
     
     // program bytton has a pull up
     if(!program) {
-      if(program_ts == 0) {
-        program_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
-      }
-      
-      if(xTaskGetTickCount()*portTICK_PERIOD_MS - program_ts > 3000) {
-        printf("RESET\n"); 
-        program_ts = 0;
-        flash_erase_all();
+      if(program_enabled) {
+        if(program_ts == 0) {
+          program_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
+        }
+        
+        if(xTaskGetTickCount()*portTICK_PERIOD_MS - program_ts > 3000) {
+          printf("RESET\n"); 
+          program_ts = 0;
+          flash_erase_all();
+        }
       }
     } else {
+      program_enabled = true;
       program_ts = 0;
     }
     
@@ -277,39 +282,6 @@ static void test_task(void *pvParameters) {
   }
 }
 
-const gpio_inttype_t int_type = GPIO_INTTYPE_EDGE_ANY;
-int gpio = 12;
-
-static QueueHandle_t tsqueue;
-
-void gpio_intr_handler(uint8_t gpio_num)
-{
-  uint32_t now = xTaskGetTickCountFromISR();
-  xQueueSendToBackFromISR(tsqueue, &now, NULL);
-}
-
-void buttonIntTask(void *pvParameters)
-{
-  printf("Waiting for button press interrupt on gpio %d...\r\n", gpio);
-  QueueHandle_t *tsqueue = (QueueHandle_t *)pvParameters;
-  gpio_set_interrupt(gpio, int_type, gpio_intr_handler);
-  
-  uint32_t last = 0;
-  while(1) {
-    uint32_t button_ts;
-    xQueueReceive(*tsqueue, &button_ts, portMAX_DELAY);
-    button_ts *= portTICK_PERIOD_MS;
-    if(last < button_ts-200) {
-      printf("Button interrupt fired at %dms\r\n", button_ts);
-      last = button_ts;
-    }
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-  }
-}
-
-
-
-
 //Init function 
 void user_init() {
   _is_connected = false;
@@ -331,24 +303,15 @@ void user_init() {
   printf("#%d\n", id);
   rfid_start();
   webserverInit();
-  
+
   gpio_enable(NEXT_PUSH_PIN, GPIO_INPUT);
   gpio_enable(PROGRAM_PUSH_PIN, GPIO_INPUT);
   
   gpio_enable(GREEN_LED_PIN, GPIO_OUTPUT);
   gpio_write(GREEN_LED_PIN, 1);
-  
+
   gpio_enable(RED_LED_PIN, GPIO_OUTPUT);
   gpio_write(RED_LED_PIN, 1);
   
-  gpio_enable(gpio, GPIO_INPUT);
-  
-//   gpio_enable(13, GPIO_OUTPUT);
-//   gpio_write(13, 1);
-  
-//   gpio_enable(14, GPIO_INPUT);
-//   gpio_write(14, 1);
-  
-  tsqueue = xQueueCreate(2, sizeof(uint32_t));
-  xTaskCreate(buttonIntTask, "buttonIntTask", 256, &tsqueue, 2, NULL);
+  rotary_init(ROTARY_A, ROTARY_B, ROTARY_C);
 }

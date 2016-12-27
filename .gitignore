@@ -4,3 +4,4 @@ user/user_config.h
 build/
 eagle/*.b#*
 *.pyc
+*#*
