@@ -5466,6 +5466,12 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <pinref part="GND4" gate="1" pin="GND"/>
 <wire x1="55.88" y1="58.42" x2="58.42" y2="58.42" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<label x="-48.26" y="55.88" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="ROTARY_C" gate="G$1" pin="P"/>
+<wire x1="-30.48" y1="55.88" x2="-48.26" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="-30.48" y1="38.1" x2="-30.48" y2="55.88" width="0.1524" layer="91"/>
+</segment>
 </net>
 <net name="N$7" class="0">
 <segment>
@@ -5530,17 +5536,6 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <junction x="35.56" y="55.88"/>
 </segment>
 </net>
-<net name="ROTARY_C" class="0">
-<segment>
-<pinref part="U1" gate="G$1" pin="GPIO13"/>
-<wire x1="-22.86" y1="55.88" x2="-30.48" y2="55.88" width="0.1524" layer="91"/>
-<label x="-48.26" y="55.88" size="1.27" layer="95" rot="R180" xref="yes"/>
-<pinref part="ROTARY_C" gate="G$1" pin="P"/>
-<wire x1="-30.48" y1="55.88" x2="-48.26" y2="55.88" width="0.1524" layer="91"/>
-<wire x1="-30.48" y1="38.1" x2="-30.48" y2="55.88" width="0.1524" layer="91"/>
-<junction x="-30.48" y="55.88"/>
-</segment>
-</net>
 <net name="ROTARY_A" class="0">
 <segment>
 <pinref part="U1" gate="G$1" pin="GPIO14"/>
@@ -5587,15 +5582,6 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <wire x1="-91.44" y1="86.36" x2="-88.9" y2="86.36" width="0.1524" layer="91"/>
 <label x="-88.9" y="86.36" size="1.778" layer="95" xref="yes"/>
 </segment>
-</net>
-<net name="N$1" class="0">
-<segment>
-<pinref part="U1" gate="G$1" pin="GPIO0"/>
-<pinref part="U$2" gate="G$1" pin="COM"/>
-<wire x1="10.16" y1="60.96" x2="40.64" y2="60.96" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$8" class="0">
 <segment>
 <pinref part="U1" gate="G$1" pin="VCC"/>
 <wire x1="-22.86" y1="53.34" x2="-22.86" y2="48.26" width="0.1524" layer="91"/>
@@ -5605,6 +5591,13 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <wire x1="-15.24" y1="30.48" x2="-15.24" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="-15.24" y1="48.26" x2="-22.86" y2="48.26" width="0.1524" layer="91"/>
 <junction x="-22.86" y="48.26"/>
+</segment>
+</net>
+<net name="N$1" class="0">
+<segment>
+<pinref part="U1" gate="G$1" pin="GPIO0"/>
+<pinref part="U$2" gate="G$1" pin="COM"/>
+<wire x1="10.16" y1="60.96" x2="40.64" y2="60.96" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="RX" class="0">
