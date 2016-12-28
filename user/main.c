@@ -32,6 +32,25 @@ fifo_t serial;
 uint8_t serial_buffer[SERIAL_BUFFER_SIZE];
 struct sdk_station_config wifi_config;
 
+
+void set_red_led_blink(bool _status, unsigned int _frequency) {
+  
+  if( _frequency == 0 ) {
+    timer_set_interrupts(FRC1, false);
+    timer_set_run(FRC1, false); 
+    gpio_write(RED_LED_PIN, _status);
+  } else {
+    timer_set_frequency(FRC1, _frequency);
+    timer_set_interrupts(FRC1, true);
+    timer_set_run(FRC1, true);
+  }
+}
+
+
+void set_red_led(bool _status) {
+  set_red_led_blink(_status, 0);
+}
+
 bool save_network(char * _essid, char *_password) {
   printf("saving essid=%s, password=%s to flash\n",_essid, _password);
   int res_ssid = flash_key_value_set("ssid",_essid);
@@ -111,7 +130,6 @@ bool get_button_pressed() {
 
 void connect(struct sdk_station_config* _config) {
   printf("connecting to %s\n",_config->ssid);
-  printf("     %s\n",_config->password);
   sdk_wifi_set_opmode(STATION_MODE);
   sdk_wifi_station_set_config(_config);
 }
@@ -224,6 +242,7 @@ static void wifi_task(void *pvParameters) {
       while ((status = sdk_wifi_station_get_connect_status())
         == STATION_GOT_IP) {
         if ( ! _is_connected ) {
+          set_red_led(false);
           printf("WiFi: Connected\n\r");
           _is_connected = true;
         }
@@ -255,6 +274,7 @@ static void test_task(void *pvParameters) {
           printf("RESET\n"); 
           program_ts = 0;
           flash_erase_all();
+          sdk_system_restart();
         }
       }
     } else {
@@ -273,13 +293,27 @@ static void test_task(void *pvParameters) {
       
     }
     
-    
-    
+    long value = get_encoder_value();
+    if( value != 0 ) {
+      if(value > 0) {
+        printf("Up\n");
+        push_tag(UP_TAG);
+      } else {
+        printf("Down\n");
+        push_tag(DOWN_TAG);
+      }
+    }      
     
     bool playpause = gpio_read(PLAYPAUSE_PUSH_PIN);
-    printf("program %d next %d  play_pause %d\n",program, next, playpause);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+//     printf("program %d next %d  play_pause %d\n",program, next, playpause);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
+}
+
+
+void frc1_interrupt_handler(void)
+{
+  gpio_toggle(RED_LED_PIN);
 }
 
 //Init function 
@@ -289,29 +323,37 @@ void user_init() {
   
   uart_set_baud(0, 9600);
   xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 3, NULL);//1024,866
-  if( load_network(&wifi_config)) {
-    connect(&wifi_config);
-    xTaskCreate(wifi_task, (const char *)"wifi_task", 512, NULL, 3, NULL);//1024,866
-  } else {
-    flash_erase_all();
-    setup_ap();
-  }
   
   xTaskCreate(test_task, (const char *)"test_task", 512, NULL, 3, NULL);//1024,866
+  
+  timer_set_interrupts(FRC1, false);
+  timer_set_run(FRC1, false);
+  _xt_isr_attach(INUM_TIMER_FRC1, frc1_interrupt_handler);
   
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
   rfid_start();
   webserverInit();
-
+  
   gpio_enable(NEXT_PUSH_PIN, GPIO_INPUT);
   gpio_enable(PROGRAM_PUSH_PIN, GPIO_INPUT);
   
   gpio_enable(GREEN_LED_PIN, GPIO_OUTPUT);
-  gpio_write(GREEN_LED_PIN, 1);
-
+  //   gpio_write(GREEN_LED_PIN, 1);
+  
   gpio_enable(RED_LED_PIN, GPIO_OUTPUT);
-  gpio_write(RED_LED_PIN, 1);
+  set_red_led(false);
   
   rotary_init(ROTARY_A, ROTARY_B, ROTARY_C);
+  
+  
+  if( load_network(&wifi_config)) {
+    set_red_led_blink(true, 5);
+    connect(&wifi_config);
+    xTaskCreate(wifi_task, (const char *)"wifi_task", 512, NULL, 3, NULL);//1024,866
+  } else {
+    set_red_led_blink(true, 1);
+    flash_erase_all();
+    setup_ap();
+  }
 }

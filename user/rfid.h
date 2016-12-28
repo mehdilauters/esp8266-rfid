@@ -15,5 +15,6 @@ typedef struct {
 } tag_t;
 
 void rfid_start();
+void push_tag(char *_tag);
 
 #endif

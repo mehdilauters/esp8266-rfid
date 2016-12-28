@@ -16,6 +16,11 @@
 #define ROTARY_B 12
 #define ROTARY_C 13
 
+#define UP_TAG "00000"
+#define DOWN_TAG "00000"
+#define NEXT_TAG "00000"
+#define PAUSE_TAG "00000"
+
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
 #endif

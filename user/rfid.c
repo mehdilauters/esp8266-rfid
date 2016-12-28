@@ -47,6 +47,16 @@ bool tag_feed(tag_t *_tag, uint8_t _val) {
   return true;
 }
 
+void push_tag(char *_tag) {
+  tag_init(&m_tag);
+  int i;
+  for(i=0; i < strlen(_tag); i++)
+  {
+    tag_feed(&m_tag, _tag[i]);
+  }
+  m_tag.valid = true;
+}
+
 bool send_tag() {
   int sockfd;
   struct sockaddr_in serverSockAddr;
@@ -108,29 +118,29 @@ void tag_process() {
   }
 }
 
-static void button_triggered() {
-  tag_init(&m_tag);
-  int i;
-  for(i=0; i < strlen(BUTTON_TAG_VALUE); i++)
-  {
-    tag_feed(&m_tag, BUTTON_TAG_VALUE[i]);
-  }
-  m_tag.valid = true;
-}
-
-static void process_button() {
-  if(get_button_pressed() ) {
-    if(button_pressed > BUTTON_PRESSED_DELAY && ! button_processed)
-    {
-      button_processed = true;
-      button_triggered();
-    }
-    button_pressed ++;
-  } else {
-    button_processed = false;
-    button_pressed = 0;
-  }
-}
+// static void button_triggered() {
+//   tag_init(&m_tag);
+//   int i;
+//   for(i=0; i < strlen(BUTTON_TAG_VALUE); i++)
+//   {
+//     tag_feed(&m_tag, BUTTON_TAG_VALUE[i]);
+//   }
+//   m_tag.valid = true;
+// }
+// 
+// static void process_button() {
+//   if(get_button_pressed() ) {
+//     if(button_pressed > BUTTON_PRESSED_DELAY && ! button_processed)
+//     {
+//       button_processed = true;
+//       button_triggered();
+//     }
+//     button_pressed ++;
+//   } else {
+//     button_processed = false;
+//     button_pressed = 0;
+//   }
+// }
 
 static void feed_task(void *pvParameters)
 {
@@ -159,13 +169,11 @@ static void feed_task(void *pvParameters)
 static void rfid_task(void *pvParameters)
 {
   while(true) {
-    process_button();
-    
     if(m_tag.valid) {
       m_tag.valid = false;
       tag_process();
     }
-    vTaskDelay(500);
+    vTaskDelay(10);
   }
 }
 
