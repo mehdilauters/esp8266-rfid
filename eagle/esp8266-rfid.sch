@@ -5352,8 +5352,8 @@ EAGLE CAD Libraries on element14&lt;/a&gt;</description>
 <part name="U$1" library="SparkFun-RF" deviceset="ID-12/20" device=""/>
 <part name="J1" library="SparkFun-Connectors" deviceset="USB-MICROB" device="&quot;"/>
 <part name="GND1" library="supply1" deviceset="GND" device=""/>
-<part name="R1" library="rcl" deviceset="R-EU_" device="R0603" value="100"/>
-<part name="R2" library="rcl" deviceset="R-EU_" device="R0603" value="100"/>
+<part name="R1" library="rcl" deviceset="R-EU_" device="R0603" value="250"/>
+<part name="R2" library="rcl" deviceset="R-EU_" device="R0603" value="347"/>
 <part name="GND3" library="supply1" deviceset="GND" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
 <part name="RED_LED" library="wirepad" deviceset="WIREPAD" device="SMD1,27-254" value="WIREPADSMD1,27-254"/>
