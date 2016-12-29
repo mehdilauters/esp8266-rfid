@@ -16,10 +16,14 @@
 #define ROTARY_B 12
 #define ROTARY_C 13
 
-#define UP_TAG "00000"
-#define DOWN_TAG "00000"
-#define NEXT_TAG "00000"
-#define PAUSE_TAG "00000"
+#define BUTTON_PRESSED_DELAY 100
+
+#define UP_TAG "AF00AF00AC"
+#define DOWN_TAG "AF00AF00AD"
+#define NEXT_TAG "AF00AF00AE"
+#define PAUSE_TAG "AF00AF00AF"
+
+// #define RAW_TCP
 
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__

@@ -237,9 +237,10 @@ static void wifi_task(void *pvParameters) {
     }
 }
 
-static void test_task(void *pvParameters) {
+static void buttons_task(void *pvParameters) {
   uint32_t next_ts = 0;
   uint32_t program_ts = 0;
+  uint32_t playpause_ts = 0;
   bool program_enabled = false;
   while(true) {
     bool next = gpio_read(NEXT_PUSH_PIN);
@@ -268,25 +269,32 @@ static void test_task(void *pvParameters) {
       if(next_ts == 0) {
         next_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
       }
-      if(xTaskGetTickCount()*portTICK_PERIOD_MS - next_ts > 3000) {
-        printf("Pressed for 3 secs");
+      if(xTaskGetTickCount()*portTICK_PERIOD_MS - next_ts > BUTTON_PRESSED_DELAY) {
+        push_tag(NEXT_TAG);
         next_ts = 0;
       }
-      
     }
     
     long value = get_encoder_value();
     if( value != 0 ) {
       if(value > 0) {
-        printf("Up\n");
         push_tag(UP_TAG);
       } else {
-        printf("Down\n");
         push_tag(DOWN_TAG);
       }
     }      
     
-    bool playpause = gpio_read(PLAYPAUSE_PUSH_PIN);
+    bool playpause = ! gpio_read(PLAYPAUSE_PUSH_PIN);
+    if(playpause) {
+      if(playpause_ts == 0) {
+        playpause_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
+      }
+      if(xTaskGetTickCount()*portTICK_PERIOD_MS - playpause_ts > BUTTON_PRESSED_DELAY) {
+        playpause_ts = 0;
+        push_tag(PAUSE_TAG);
+      }
+    }
+    
 //     printf("program %d next %d  play_pause %d\n",program, next, playpause);
     vTaskDelay(100 / portTICK_PERIOD_MS);
   }
@@ -304,9 +312,9 @@ void user_init() {
   fifo_init(&serial, serial_buffer, SERIAL_BUFFER_SIZE);
   
   uart_set_baud(0, 9600);
-  xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 3, NULL);//1024,866
+  xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 2, NULL);//1024,866
   
-  xTaskCreate(test_task, (const char *)"test_task", 512, NULL, 3, NULL);//1024,866
+  xTaskCreate(buttons_task, (const char *)"buttons_task", 512, NULL, 2, NULL);//1024,866
   
   timer_set_interrupts(FRC1, false);
   timer_set_run(FRC1, false);
@@ -332,7 +340,7 @@ void user_init() {
   if( load_network(&wifi_config)) {
     set_red_led_blink(true, 5);
     connect(&wifi_config);
-    xTaskCreate(wifi_task, (const char *)"wifi_task", 512, NULL, 3, NULL);//1024,866
+    xTaskCreate(wifi_task, (const char *)"wifi_task", 512, NULL, 1, NULL);//1024,866
   } else {
     set_red_led_blink(true, 1);
     flash_erase_all();
