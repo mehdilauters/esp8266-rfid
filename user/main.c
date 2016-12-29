@@ -51,6 +51,10 @@ void set_red_led(bool _status) {
   set_red_led_blink(_status, 0);
 }
 
+void set_green_led(bool _status) {
+  gpio_write(GREEN_LED_PIN, _status);
+}
+
 bool save_network(char * _essid, char *_password) {
   printf("saving essid=%s, password=%s to flash\n",_essid, _password);
   int res_ssid = flash_key_value_set("ssid",_essid);
@@ -182,28 +186,6 @@ void serial_task(void *pvParameters) {
       if(! fifo_isfull(&serial)) {
         fifo_push(&serial, c);
         printf("%c\n",c);
-        switch(c) {
-          case '0':
-          {
-            printf("reboot to 0\n");
-            rboot_config conf = rboot_get_config();
-            conf.current_rom = 0;
-            rboot_set_config(&conf);
-            sdk_system_restart();
-            break;
-          }
-          case '1':
-          {
-            printf("reboot to 1\n");
-            rboot_config conf = rboot_get_config();
-            conf.current_rom = 1;
-            rboot_set_config(&conf);
-            sdk_system_restart();
-            break;
-          }
-          default:
-            printf("unknown\n");
-        }
       }
     }
   }
@@ -339,7 +321,7 @@ void user_init() {
   gpio_enable(PROGRAM_PUSH_PIN, GPIO_INPUT);
   
   gpio_enable(GREEN_LED_PIN, GPIO_OUTPUT);
-  //   gpio_write(GREEN_LED_PIN, 1);
+  set_green_led(false);
   
   gpio_enable(RED_LED_PIN, GPIO_OUTPUT);
   set_red_led(false);

@@ -55,6 +55,7 @@ void push_tag(char *_tag) {
     tag_feed(&m_tag, _tag[i]);
   }
   m_tag.valid = true;
+  set_green_led(true);
 }
 
 bool send_tag() {
@@ -106,6 +107,7 @@ bool send_tag() {
 #endif
   shutdown(sockfd,2);
   close(sockfd);
+  set_green_led(false);
   return true;
 }
 
@@ -156,6 +158,7 @@ static void feed_task(void *pvParameters)
         if(c == TAG_STOP) {
           m_reading = false;
           m_tag.valid = true;
+          set_green_led(true);
         }
         if(m_reading) {
           tag_feed(&m_tag, c);
