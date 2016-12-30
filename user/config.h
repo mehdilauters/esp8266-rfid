@@ -23,7 +23,7 @@
 #define NEXT_TAG "AF00AF00AE"
 #define PAUSE_TAG "AF00AF00AF"
 
-// #define RAW_TCP
+#define RAW_TCP
 
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__

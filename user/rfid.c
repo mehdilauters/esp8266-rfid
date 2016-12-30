@@ -1,5 +1,6 @@
 #include "rfid.h"
 #include "main.h"
+#include "config.h"
 #include <string.h>
 #include "espressif/esp_common.h"
 #include <esp/uart.h>

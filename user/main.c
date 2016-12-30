@@ -293,6 +293,8 @@ static void buttons_task(void *pvParameters) {
         playpause_ts = 0;
         push_tag(PAUSE_TAG);
       }
+    } else {
+      playpause_ts = 0;
     }
     
 //     printf("program %d next %d  play_pause %d\n",program, next, playpause);
