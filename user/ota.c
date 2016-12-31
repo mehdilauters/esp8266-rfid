@@ -103,6 +103,7 @@ void otacheck_task(void *pvParameters) {
 
 
 void ota_start(const char * _ip) {
+  set_green_led_blink(true, 5);
   m_ip = _ip;
   xTaskCreate(otacheck_task, (const char *)"otacheck_task", 512, NULL, 3, NULL);//1024,866
 }

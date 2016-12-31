@@ -13,6 +13,7 @@ bool save_server(char * _server, int _port);
 bool get_serial(uint8_t *_c);
 
 void set_green_led(bool _status);
+void set_green_led_blink(bool _status, unsigned int _frequency);
 void set_red_led(bool _status);
 void set_red_led_blink(bool _status, unsigned int _frequency);
 #endif

@@ -32,6 +32,7 @@ fifo_t serial;
 uint8_t serial_buffer[SERIAL_BUFFER_SIZE];
 struct sdk_station_config wifi_config;
 
+unsigned int frc2_freq = 0;
 
 void set_red_led_blink(bool _status, unsigned int _frequency) {
   
@@ -51,8 +52,21 @@ void set_red_led(bool _status) {
   set_red_led_blink(_status, 0);
 }
 
+void set_green_led_blink(bool _status, unsigned int _frequency) {
+  frc2_freq = _frequency;
+  if( _frequency == 0 ) {
+    timer_set_interrupts(FRC2, false);
+    timer_set_run(FRC2, false); 
+    gpio_write(GREEN_LED_PIN, _status);
+  } else {
+    timer_set_frequency(FRC2, _frequency);
+    timer_set_interrupts(FRC2, true);
+    timer_set_run(FRC2, true);
+  }
+}
+
 void set_green_led(bool _status) {
-  gpio_write(GREEN_LED_PIN, _status);
+  set_green_led_blink(_status, 0);
 }
 
 bool save_network(char * _essid, char *_password) {
@@ -241,6 +255,9 @@ static void buttons_task(void *pvParameters) {
   uint32_t next_ts = 0;
   uint32_t program_ts = 0;
   uint32_t playpause_ts = 0;
+  
+  bool playpause_fired = false;
+  bool next_fired = false;
   bool program_enabled = false;
   while(true) {
     bool next = gpio_read(NEXT_PUSH_PIN);
@@ -255,7 +272,7 @@ static void buttons_task(void *pvParameters) {
         
         if(xTaskGetTickCount()*portTICK_PERIOD_MS - program_ts > 3000) {
           printf("RESET\n"); 
-          program_ts = 0;
+          program_enabled = false;
           flash_erase_all();
           sdk_system_restart();
         }
@@ -269,10 +286,15 @@ static void buttons_task(void *pvParameters) {
       if(next_ts == 0) {
         next_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
       }
-      if(xTaskGetTickCount()*portTICK_PERIOD_MS - next_ts > BUTTON_PRESSED_DELAY) {
-        push_tag(NEXT_TAG);
-        next_ts = 0;
+      if( ! next_fired ) {
+        if(xTaskGetTickCount()*portTICK_PERIOD_MS - next_ts > BUTTON_PRESSED_DELAY) {
+          push_tag(NEXT_TAG);
+          next_fired = true;
+        }
       }
+    } else {
+      next_fired = false;
+      next_ts = 0;
     }
     
     long value = get_encoder_value();
@@ -289,12 +311,15 @@ static void buttons_task(void *pvParameters) {
       if(playpause_ts == 0) {
         playpause_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
       }
-      if(xTaskGetTickCount()*portTICK_PERIOD_MS - playpause_ts > BUTTON_PRESSED_DELAY) {
-        playpause_ts = 0;
-        push_tag(PAUSE_TAG);
+      if( ! playpause_fired ) {
+        if(xTaskGetTickCount()*portTICK_PERIOD_MS - playpause_ts > BUTTON_PRESSED_DELAY) {
+          playpause_fired = true;
+          push_tag(PAUSE_TAG);
+        }
       }
     } else {
       playpause_ts = 0;
+      playpause_fired = false;
     }
     
 //     printf("program %d next %d  play_pause %d\n",program, next, playpause);
@@ -306,6 +331,13 @@ static void buttons_task(void *pvParameters) {
 void frc1_interrupt_handler(void)
 {
   gpio_toggle(RED_LED_PIN);
+}
+
+void frc2_interrupt_handler(void)
+{
+  /* FRC2 needs the match register updated on each timer interrupt */
+  timer_set_frequency(FRC2, frc2_freq);
+  gpio_toggle(GREEN_LED_PIN);
 }
 
 //Init function 
@@ -322,6 +354,10 @@ void user_init() {
   timer_set_run(FRC1, false);
   _xt_isr_attach(INUM_TIMER_FRC1, frc1_interrupt_handler);
   
+  timer_set_interrupts(FRC2, false);
+  timer_set_run(FRC2, false);
+  _xt_isr_attach(INUM_TIMER_FRC2, frc2_interrupt_handler);
+  
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
   rfid_start();
@@ -337,7 +373,6 @@ void user_init() {
   set_red_led(false);
   
   rotary_init(ROTARY_A, ROTARY_B, ROTARY_C);
-  
   
   if( load_network(&wifi_config)) {
     set_red_led_blink(true, 5);
