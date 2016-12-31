@@ -5,3 +5,4 @@ build/
 eagle/*.b#*
 *.pyc
 *#*
+user/version.h
