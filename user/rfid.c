@@ -15,7 +15,7 @@
 #define TAG_START 0x02
 #define TAG_STOP 0x03
 
-#define HTTPS_REQUEST "GET /tag.json?serial=%d&tagid=%s HTTP/1.1\nHost: %s\n\n"
+#define HTTPS_REQUEST "GET /tag.json?serial=%d&tagid=%s HTTP/1.0\r\nHost: %s\r\n\r\n"
 
 tag_t m_tag;
 
@@ -95,16 +95,31 @@ bool send_tag() {
   
 #ifdef RAW_TCP
   write(sockfd, m_tag.id, TAG_ID_LENGTH);
+  printf("raw send\n");
 #else
   char buf[TAG_ID_LENGTH +1];
-  memset(buf, 0, TAG_ID_LENGTH);
+  memset(buf, 0, TAG_ID_LENGTH+1);
   for(int i=0; i < TAG_ID_LENGTH; i++) {
     buf[i] = m_tag.id[i];
   }
+  buf[TAG_ID_LENGTH] = '\0';
   char buffer[strlen(HTTPS_REQUEST) + 128];
   uint32_t id = sdk_system_get_chip_id();
   int res = sprintf(buffer, HTTPS_REQUEST, id, buf, m_server);
-  write(sockfd, buffer, res);
+  if(write(sockfd, buffer, res) < 0) {
+    perror("htt write fail\n");
+    }
+  printf("%s\n",buffer);
+  printf(buffer);
+  static char recv_buf[128];
+  int r;
+  do {
+    bzero(recv_buf, 128);
+    r = read(sockfd, recv_buf, 127);
+    if(r > 0) {
+      printf("%s", recv_buf);
+    }
+  } while(r > 0);
 #endif
   shutdown(sockfd,2);
   close(sockfd);
