@@ -1,7 +1,7 @@
 #include "rboot-api.h"
 
 
-
+#include "version.h"
 #include "config.h"
 #include "espressif/esp_common.h"
 #include "esp/gpio.h"
@@ -360,6 +360,7 @@ void user_init() {
   
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
+  printf("%s %s",BUILD_DATE, BUILD_TIME, GIT_VERSION);
   rfid_start();
   webserverInit();
   

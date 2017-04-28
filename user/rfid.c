@@ -73,7 +73,7 @@ bool send_tag() {
     serverHostEnt = gethostbyname(m_server);
     if (serverHostEnt == NULL)
     {
-      perror("gethost fail\n");
+      printf("gethost fail\n");
       return false;
     }
     bcopy(serverHostEnt->h_addr,&serverSockAddr.sin_addr,serverHostEnt->h_length);
@@ -82,14 +82,14 @@ bool send_tag() {
   serverSockAddr.sin_family = AF_INET;
   
   if ( (sockfd = socket(AF_INET,SOCK_STREAM,0)) < 0) {
-    perror("failed to create socket");
+    printf("failed to create socket");
     return false;
   }
   
   if(connect( sockfd,
     (struct sockaddr *)&serverSockAddr,
               sizeof(serverSockAddr)) < 0 ) {
-    perror("conection failed");
+    printf("conection failed");
   return false;
   }
   
@@ -107,7 +107,7 @@ bool send_tag() {
   uint32_t id = sdk_system_get_chip_id();
   int res = sprintf(buffer, HTTPS_REQUEST, id, buf, m_server);
   if(write(sockfd, buffer, res) < 0) {
-    perror("htt write fail\n");
+    printf("http write fail\n");
     }
   printf("%s\n",buffer);
   printf(buffer);

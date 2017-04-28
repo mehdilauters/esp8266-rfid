@@ -4,7 +4,7 @@
 #define DEFAULT_SSID "esp-rfid"
 
 // should be firmwar_1.bin on the server
-#define TFTP_IMAGE_FILENAME "firmware.bin"
+#define TFTP_IMAGE_FILENAME "esp-rfid.bin"
 
 #define GREEN_LED_PIN 04
 #define RED_LED_PIN 05
