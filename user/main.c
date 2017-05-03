@@ -230,8 +230,19 @@ static void wifi_task(void *pvParameters) {
       
       if(retries == 0) {
         setup_ap();
+        int sec = 0;
+        bool sleep = false;
         while(true) {
+          if( sec > MAX_AP_DURATION && ! sleep) {
+            sleep = true;
+            printf("Sleeping\n");
+//             system_deep_sleep_set_option()
+//             sdk_system_deep_sleep(UINT32_MAX);
+            sdk_wifi_station_stop();
+            sdk_wifi_softap_stop();
+          }
           vTaskDelay(1000 / portTICK_PERIOD_MS); 
+          sec ++;
         }
       }
       
@@ -360,7 +371,7 @@ void user_init() {
   
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
-  printf("%s %s",BUILD_DATE, BUILD_TIME, GIT_VERSION);
+  printf("%s %s %s",BUILD_DATE, BUILD_TIME, GIT_VERSION);
   rfid_start();
   webserverInit();
   
