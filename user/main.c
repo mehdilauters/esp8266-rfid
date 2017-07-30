@@ -14,6 +14,8 @@
 #include <dhcpserver.h>
 #include <lwip/api.h>
 
+#include "esplibs/libnet80211.h"
+
 #include "captdns.h"
 #include "webserver.h"
 #include "rfid.h"
@@ -264,12 +266,10 @@ static void wifi_task(void *pvParameters) {
 
 static void buttons_task(void *pvParameters) {
   uint32_t next_ts = 0;
-  uint32_t alternate_ts = 0;
   uint32_t playpause_ts = 0;
   
   bool playpause_fired = false;
   bool next_fired = false;
-  bool alternate_fired = false;
   
   while(true) {
     bool next = gpio_read(NEXT_PUSH_PIN);
