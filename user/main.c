@@ -264,34 +264,18 @@ static void wifi_task(void *pvParameters) {
 
 static void buttons_task(void *pvParameters) {
   uint32_t next_ts = 0;
-  uint32_t program_ts = 0;
+  uint32_t alternate_ts = 0;
   uint32_t playpause_ts = 0;
   
   bool playpause_fired = false;
   bool next_fired = false;
-  bool program_enabled = false;
+  bool alternate_fired = false;
+  
   while(true) {
     bool next = gpio_read(NEXT_PUSH_PIN);
-    bool program = gpio_read(PROGRAM_PUSH_PIN);
+    // gpio0 has a pulldown
+    bool alternate = !gpio_read(ALTERNATE_PUSH_PIN);
     
-    // program bytton has a pull up
-    if(!program) {
-      if(program_enabled) {
-        if(program_ts == 0) {
-          program_ts = xTaskGetTickCount()*portTICK_PERIOD_MS;
-        }
-        
-        if(xTaskGetTickCount()*portTICK_PERIOD_MS - program_ts > 3000) {
-          printf("RESET\n"); 
-          program_enabled = false;
-          flash_erase_all();
-          sdk_system_restart();
-        }
-      }
-    } else {
-      program_enabled = true;
-      program_ts = 0;
-    }
     
     if(next) {
       if(next_ts == 0) {
@@ -299,7 +283,11 @@ static void buttons_task(void *pvParameters) {
       }
       if( ! next_fired ) {
         if(xTaskGetTickCount()*portTICK_PERIOD_MS - next_ts > BUTTON_PRESSED_DELAY) {
-          push_tag(NEXT_TAG);
+          if(alternate) {
+            push_tag(NEXT_ALTERNATE_TAG);
+          } else {
+            push_tag(NEXT_TAG);
+          }
           next_fired = true;
         }
       }
@@ -311,9 +299,17 @@ static void buttons_task(void *pvParameters) {
     long value = get_encoder_value();
     if( value != 0 ) {
       if(value > 0) {
-        push_tag(UP_TAG);
+        if(alternate) {
+          push_tag(UP_ALTERNATE_TAG);
+        } else {
+          push_tag(UP_TAG);
+        }
       } else {
-        push_tag(DOWN_TAG);
+        if(alternate) {
+          push_tag(DOWN_ALTERNATE_TAG);
+        } else {
+          push_tag(DOWN_TAG);
+        }
       }
     }      
     
@@ -325,7 +321,11 @@ static void buttons_task(void *pvParameters) {
       if( ! playpause_fired ) {
         if(xTaskGetTickCount()*portTICK_PERIOD_MS - playpause_ts > BUTTON_PRESSED_DELAY) {
           playpause_fired = true;
-          push_tag(PAUSE_TAG);
+          if(alternate) {
+            push_tag(PAUSE_ALTERNATE_TAG);
+          } else {
+            push_tag(PAUSE_TAG);
+          }
         }
       }
     } else {
@@ -357,9 +357,9 @@ void user_init() {
   fifo_init(&serial, serial_buffer, SERIAL_BUFFER_SIZE);
   
   uart_set_baud(0, 9600);
-  xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 2, NULL);//1024,866
+  xTaskCreate(serial_task, (const char *)"serial_task", 512, NULL, 2, NULL);
   
-  xTaskCreate(buttons_task, (const char *)"buttons_task", 512, NULL, 2, NULL);//1024,866
+  xTaskCreate(buttons_task, (const char *)"buttons_task", 512, NULL, 2, NULL);
   
   timer_set_interrupts(FRC1, false);
   timer_set_run(FRC1, false);
@@ -371,12 +371,12 @@ void user_init() {
   
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
-  printf("%s %s %s",BUILD_DATE, BUILD_TIME, GIT_VERSION);
+  printf("%s %s %s\n",BUILD_DATE, BUILD_TIME, GIT_VERSION);
   rfid_start();
   webserverInit();
   
   gpio_enable(NEXT_PUSH_PIN, GPIO_INPUT);
-  gpio_enable(PROGRAM_PUSH_PIN, GPIO_INPUT);
+  gpio_enable(ALTERNATE_PUSH_PIN, GPIO_INPUT);
   
   gpio_enable(GREEN_LED_PIN, GPIO_OUTPUT);
   set_green_led(false);
@@ -389,7 +389,7 @@ void user_init() {
   if( load_network(&wifi_config)) {
     set_red_led_blink(true, 5);
     connect(&wifi_config);
-    xTaskCreate(wifi_task, (const char *)"wifi_task", 512, NULL, 1, NULL);//1024,866
+    xTaskCreate(wifi_task, (const char *)"wifi_task", 512, NULL, 1, NULL);
   } else {
     set_red_led_blink(true, 1);
     flash_erase_all();
