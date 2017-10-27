@@ -363,11 +363,11 @@ void user_init() {
   
   timer_set_interrupts(FRC1, false);
   timer_set_run(FRC1, false);
-  _xt_isr_attach(INUM_TIMER_FRC1, frc1_interrupt_handler);
+  _xt_isr_attach(INUM_TIMER_FRC1, frc1_interrupt_handler, NULL);
   
   timer_set_interrupts(FRC2, false);
   timer_set_run(FRC2, false);
-  _xt_isr_attach(INUM_TIMER_FRC2, frc2_interrupt_handler);
+  _xt_isr_attach(INUM_TIMER_FRC2, frc2_interrupt_handler, NULL);
   
   uint32_t id = sdk_system_get_chip_id();
   printf("#%d\n", id);
